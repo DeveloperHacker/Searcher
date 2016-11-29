@@ -1,14 +1,13 @@
 package analysers;
 
 import org.objectweb.asm.MethodVisitor;
-import parts.Class;
-import parts.Method;
+import parts.AstMethod;
 
 import java.util.function.Consumer;
 
 public class MethodAnalyser extends MethodVisitor {
 
-    public Consumer<Method> visitMethodInsn = null;
+    public Consumer<AstMethod> visitMethodInsn = null;
 
     public MethodAnalyser(int i) {
         super(i);
@@ -16,7 +15,7 @@ public class MethodAnalyser extends MethodVisitor {
 
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
-        Method method = Parser.parseMethod('L' + owner + ';', name, desc);
+        AstMethod method = Parser.parseMethod('L' + owner + ';', name, desc);
         if (this.visitMethodInsn != null) this.visitMethodInsn.accept(method);
     }
 }

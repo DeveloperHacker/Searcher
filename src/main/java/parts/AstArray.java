@@ -1,15 +1,15 @@
 package parts;
 
-public class Array extends Type {
+public class AstArray extends AstType {
 
-    private Type inner;
+    private AstType inner;
 
-    public Array(Type inner) {
+    public AstArray(AstType inner) {
         super("[");
         this.inner = inner;
     }
 
-    public Type getInner() {
+    public AstType getInner() {
         return this.inner;
     }
 
@@ -18,6 +18,6 @@ public class Array extends Type {
      */
     @Override
     public String toString() {
-        return this.getName() + this.inner.toString();
+        return "[" + this.inner.toString();
     }
 }

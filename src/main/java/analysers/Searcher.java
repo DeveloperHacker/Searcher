@@ -3,7 +3,7 @@ package analysers;
 import com.github.javaparser.ast.comments.JavadocComment;
 import org.javatuples.Pair;
 import org.objectweb.asm.ClassReader;
-import parts.Method;
+import parts.AstMethod;
 
 import java.io.IOException;
 import java.util.*;
@@ -12,7 +12,7 @@ import static org.objectweb.asm.Opcodes.ASM5;
 
 public class Searcher {
 
-    final private Map<Method, List<Method>> methodIndex = new HashMap<>();
+    final private Map<AstMethod, List<AstMethod>> methodIndex = new HashMap<>();
 
     public Searcher(List<String> sourceCodes, List<String> byteCodes) throws IOException {
         for (String code : byteCodes) {
@@ -22,15 +22,15 @@ public class Searcher {
                 reader.accept(analyser, 0);
                 this.methodIndex.putAll(analyser.getMethods());
             } catch (IOException e) {
-                throw new IOException(String.format("parts.Class '%s' not found", code));
+                throw new IOException(String.format("parts.AstClass '%s' not found", code));
             }
         }
     }
 
-    public Set<Method> usages(Method attribute) {
-        Set<Method> result = new HashSet<>();
-        for (Map.Entry<Method, List<Method>> entry : this.methodIndex.entrySet()) {
-            for (Method method : entry.getValue()) {
+    public Set<AstMethod> usages(AstMethod attribute) {
+        Set<AstMethod> result = new HashSet<>();
+        for (Map.Entry<AstMethod, List<AstMethod>> entry : this.methodIndex.entrySet()) {
+            for (AstMethod method : entry.getValue()) {
                 if (method.equals(attribute)) {
                     result.add(entry.getKey());
                     break;
@@ -40,11 +40,11 @@ public class Searcher {
         return result;
     }
 
-    public Pair<Method, JavadocComment> associate(Method method) {
+    public Pair<AstMethod, JavadocComment> associate(AstMethod method) {
         return null;
     }
 
-    public Map<Method, List<Method>> getMethodIndex() {
+    public Map<AstMethod, List<AstMethod>> getMethodIndex() {
         return this.methodIndex;
     }
 }

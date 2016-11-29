@@ -2,11 +2,8 @@ package analysers;
 
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
-import parts.Array;
-import parts.Class;
-import parts.Method;
-import parts.PrimitiveType;
-import parts.Type;
+import parts.*;
+import parts.AstMethod;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -18,21 +15,6 @@ public class Parser {
         public ParseException(String message) {
             super(message);
         }
-    }
-
-    private final static Map<Character, String> primitive_types;
-
-    static {
-        primitive_types = new HashMap<>();
-        primitive_types.put('B', "byte");
-        primitive_types.put('C', "char");
-        primitive_types.put('D', "double");
-        primitive_types.put('F', "float");
-        primitive_types.put('I', "int");
-        primitive_types.put('J', "long");
-        primitive_types.put('S', "short");
-        primitive_types.put('Z', "boolean");
-        primitive_types.put('V', "void");
     }
 
     public static Pair<List<String>, String> parseDescription(String description) {
@@ -58,7 +40,7 @@ public class Parser {
             if (ch == '<') brackets++;
             if (ch == ')') break;
             token.append(ch);
-            if ((brackets == 0 && ch == ';') || (token.length() == 1 && primitive_types.containsKey(ch))) {
+            if ((brackets == 0 && ch == ';') || (token.length() == 1 && AstPrimitiveType.isPrimitive(ch))) {
                 if (token.length() == 0) throw new ParseException("Expected 'type name' or '>'");
                 parameters.add(token.toString());
                 token = new StringBuilder();
@@ -116,20 +98,20 @@ public class Parser {
         return new Triplet<>(generics, parameters, type);
     }
 
-    public static Type parseType(String name) {
+    public static AstType parseType(String name) {
         final char first = name.charAt(0);
-        if (primitive_types.containsKey(first)) {
-            return new PrimitiveType(name);
+        if (AstPrimitiveType.isPrimitive(first)) {
+            return new AstPrimitiveType(name);
         } else if (first == 'L') {
             return Parser.parseClass(name);
         } else if (first == '[') {
-            return new Array(Parser.parseType(name.substring(1, name.length())));
+            return new AstArray(Parser.parseType(name.substring(1, name.length())));
         } else {
             throw new ParseException("Expected the target symbol in begin word");
         }
     }
 
-    public static Class parseClass(String full_name) {
+    public static AstClass parseClass(String full_name) {
         if (!(full_name.length() > 2 && full_name.charAt(0) == 'L' && full_name.charAt(full_name.length() - 1) == ';'))
             throw new ParseException("Expected the symbol 'L' in begin of name and ';' in end");
         full_name = full_name.substring(1, full_name.length() - 1);
@@ -155,22 +137,21 @@ public class Parser {
         }
         if (brackets > 0) throw new ParseException("Expected '>' before 'eof'");
         if (it.hasNext()) throw new ParseException("Expected 'eof'");
-        final List<String> temp = new ArrayList<>(Arrays.asList(name.toString().split("[/.]")));
+        final List<String> temp = new ArrayList<>(Arrays.asList(name.toString().replace("/", ".").split("\\.")));
         final List<String> path = new ArrayList<>(temp.subList(0, temp.size() - 1));
-        if (path.size() == 0) throw new ParseException("Invalid full name");
         final List<String> names = new ArrayList<>(Arrays.asList(temp.get(temp.size() - 1).split("\\$")));
         if (names.size() == 0) throw new ParseException("Invalid full name");
-        return new Class(path, names);
+        return new AstClass(path, names);
     }
 
-    public static Method parseMethod(String owner, String name, String desc) {
+    public static AstMethod parseMethod(String owner, String name, String desc) {
         return Parser.parseMethod(Parser.parseClass(owner), name, desc);
     }
 
-    public static Method parseMethod(Class owner, String name, String desc) {
+    public static AstMethod parseMethod(AstClass owner, String name, String desc) {
         Pair<List<String>, String> doublet = Parser.parseDescription(desc);
-        Type type = Parser.parseType(doublet.getValue1());
-        List<Type> parameters = doublet.getValue0().stream().map(Parser::parseType).collect(Collectors.toList());
-        return new Method(name, owner, type, parameters);
+        AstType type = Parser.parseType(doublet.getValue1());
+        List<AstType> parameters = doublet.getValue0().stream().map(Parser::parseType).collect(Collectors.toList());
+        return new AstMethod(name, owner, type, parameters);
     }
 }

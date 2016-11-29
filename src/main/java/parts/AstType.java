@@ -1,10 +1,10 @@
 package parts;
 
-public abstract class Type {
+public abstract class AstType {
 
     private final String name;
 
-    public Type(String name) {
+    public AstType(String name) {
         this.name = name;
     }
 
@@ -23,8 +23,8 @@ public abstract class Type {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Type)) return false;
-        Type type = (Type) o;
+        if (!(o instanceof AstType)) return false;
+        AstType type = (AstType) o;
         return name != null ? name.equals(type.name) : type.name == null;
 
     }

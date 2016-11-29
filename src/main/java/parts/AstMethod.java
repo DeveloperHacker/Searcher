@@ -1,23 +1,31 @@
 package parts;
 
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class Method {
+public class AstMethod {
 
-    private String name;
-    private Class owner;
-    private Type type;
-    private List<Type> parameters;
+    private final String name;
+    private final AstClass owner;
+    private final AstType type;
+    private final List<AstType> parameters;
+    private Supplier<String> description;
 
-    public Method(String name, Class owner, Type type, List<Type> parameters) {
+    public AstMethod(String name, AstClass owner, AstType type, List<AstType> parameters) {
         this.name = name;
         this.owner = owner;
         this.type = type;
         this.parameters = parameters;
+        this.description = () -> {
+            String params = parameters.stream().map(AstType::toString).collect(Collectors.joining(""));
+            String val = String.format("%s%s(%s)%s", owner.toString(), name, params, type.toString());
+            this.description = () -> val;
+            return val;
+        };
     }
 
-    public Type getType() {
+    public AstType getType() {
         return type;
     }
 
@@ -25,17 +33,16 @@ public class Method {
         return name;
     }
 
-    public Class getOwner() {
+    public AstClass getOwner() {
         return owner;
     }
 
-    public List<Type> getParameters() {
+    public List<AstType> getParameters() {
         return parameters;
     }
 
     public String getDescription() {
-        String parameters = this.parameters.stream().map(Type::toString).collect(Collectors.joining(""));
-        return String.format("%s%s(%s)%s", owner.toString(), name, parameters, type.toString());
+        return this.description.get();
     }
 
     @Override
@@ -55,8 +62,8 @@ public class Method {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Method)) return false;
-        Method method = (Method) o;
+        if (!(o instanceof AstMethod)) return false;
+        AstMethod method = (AstMethod) o;
         if (name != null ? !name.equals(method.name) : method.name != null) return false;
         if (owner != null ? !owner.equals(method.owner) : method.owner != null) return false;
         if (type != null ? !type.equals(method.type) : method.type != null) return false;
