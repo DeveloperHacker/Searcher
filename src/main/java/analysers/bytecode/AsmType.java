@@ -1,10 +1,10 @@
-package parts;
+package analysers.bytecode;
 
-public abstract class AstType {
+public abstract class AsmType {
 
     private final String name;
 
-    public AstType(String name) {
+    public AsmType(String name) {
         this.name = name;
     }
 
@@ -23,8 +23,8 @@ public abstract class AstType {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof AstType)) return false;
-        AstType type = (AstType) o;
+        if (!(o instanceof AsmType)) return false;
+        AsmType type = (AsmType) o;
         return name != null ? name.equals(type.name) : type.name == null;
 
     }

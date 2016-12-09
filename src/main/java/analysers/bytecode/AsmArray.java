@@ -1,21 +1,18 @@
-package parts;
+package analysers.bytecode;
 
-public class AstArray extends AstType {
+public class AsmArray extends AsmType {
 
-    private AstType inner;
+    private AsmType inner;
 
-    public AstArray(AstType inner) {
+    public AsmArray(AsmType inner) {
         super("[");
         this.inner = inner;
     }
 
-    public AstType getInner() {
+    public AsmType getInner() {
         return this.inner;
     }
 
-    /**
-     * @see Object
-     */
     @Override
     public String toString() {
         return "[" + this.inner.toString();

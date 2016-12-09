@@ -1,9 +1,8 @@
 package analysers;
 
+import analysers.bytecode.*;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
-import parts.*;
-import parts.AstMethod;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -11,7 +10,6 @@ import java.util.stream.Collectors;
 public class Parser {
 
     public static class ParseException extends IllegalArgumentException {
-
         public ParseException(String message) {
             super(message);
         }
@@ -40,7 +38,7 @@ public class Parser {
             if (ch == '<') brackets++;
             if (ch == ')') break;
             token.append(ch);
-            if ((brackets == 0 && ch == ';') || (token.length() == 1 && AstPrimitiveType.isPrimitive(ch))) {
+            if ((brackets == 0 && ch == ';') || (token.length() == 1 && AsmPrimitiveType.isPrimitive(ch))) {
                 if (token.length() == 0) throw new ParseException("Expected 'type name' or '>'");
                 parameters.add(token.toString());
                 token = new StringBuilder();
@@ -98,20 +96,21 @@ public class Parser {
         return new Triplet<>(generics, parameters, type);
     }
 
-    public static AstType parseType(String name) {
+    public static AsmType parseType(String name) {
         final char first = name.charAt(0);
-        if (AstPrimitiveType.isPrimitive(first)) {
-            return new AstPrimitiveType(name);
+        if (AsmPrimitiveType.isPrimitive(first)) {
+            return new AsmPrimitiveType(first);
         } else if (first == 'L') {
             return Parser.parseClass(name);
         } else if (first == '[') {
-            return new AstArray(Parser.parseType(name.substring(1, name.length())));
+            return new AsmArray(Parser.parseType(name.substring(1, name.length())));
         } else {
+            System.out.println(name);
             throw new ParseException("Expected the target symbol in begin word");
         }
     }
 
-    public static AstClass parseClass(String full_name) {
+    public static AsmClass parseClass(String full_name) {
         if (!(full_name.length() > 2 && full_name.charAt(0) == 'L' && full_name.charAt(full_name.length() - 1) == ';'))
             throw new ParseException("Expected the symbol 'L' in begin of name and ';' in end");
         full_name = full_name.substring(1, full_name.length() - 1);
@@ -141,17 +140,17 @@ public class Parser {
         final List<String> path = new ArrayList<>(temp.subList(0, temp.size() - 1));
         final List<String> names = new ArrayList<>(Arrays.asList(temp.get(temp.size() - 1).split("\\$")));
         if (names.size() == 0) throw new ParseException("Invalid full name");
-        return new AstClass(path, names);
+        return new AsmClass(path, names);
     }
 
-    public static AstMethod parseMethod(String owner, String name, String desc) {
+    public static MethodDescription parseMethod(String owner, String name, String desc) {
         return Parser.parseMethod(Parser.parseClass(owner), name, desc);
     }
 
-    public static AstMethod parseMethod(AstClass owner, String name, String desc) {
-        Pair<List<String>, String> doublet = Parser.parseDescription(desc);
-        AstType type = Parser.parseType(doublet.getValue1());
-        List<AstType> parameters = doublet.getValue0().stream().map(Parser::parseType).collect(Collectors.toList());
-        return new AstMethod(name, owner, type, parameters);
+    public static MethodDescription parseMethod(AsmClass owner, String name, String desc) {
+        Pair<List<String>, String> pair = Parser.parseDescription(desc);
+        AsmType type = Parser.parseType(pair.getValue1());
+        List<AsmType> parameters = pair.getValue0().stream().map(Parser::parseType).collect(Collectors.toList());
+        return new MethodDescription(name, owner, type, parameters);
     }
 }

@@ -1,14 +1,14 @@
-package parts;
+package analysers.bytecode;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class AstClass extends AstType {
+public class AsmClass extends AsmType {
 
     private final String pkg;
-    private final AstClass owner;
-    private Supplier<String> fullname;
+    private final AsmClass owner;
+    private Supplier<String> name;
 
     /**
      * Full name of class should parse to two parts (path and names).
@@ -21,19 +21,19 @@ public class AstClass extends AstType {
      * @param path it is path part, not null
      * @param names it is names part, not null and the length of this param is greater than 1.
      */
-    public AstClass(List<String> path, List<String> names) {
+    public AsmClass(List<String> path, List<String> names) {
         this(
             String.join(".", path),
-            names.size() == 1 ? null : new AstClass(path, new ArrayList<>(names.subList(0, names.size() - 1))),
+            names.size() == 1 ? null : new AsmClass(path, new ArrayList<>(names.subList(0, names.size() - 1))),
             names.get(names.size() - 1)
         );
     }
 
-    public AstClass(String pkg, AstClass owner, String name) {
+    public AsmClass(String pkg, AsmClass owner, String name) {
         super(name);
         this.pkg = pkg;
         this.owner = owner;
-        this.fullname = () -> {
+        this.name = () -> {
             String val;
             if (owner == null) {
                 val = "L" + (pkg.length() > 0 ? pkg + "." : "")+ name + ";";
@@ -41,7 +41,7 @@ public class AstClass extends AstType {
                 String ownerName = owner.getFullName();
                 val = ownerName.substring(0, ownerName.length() - 1) + "$" + name + ";";
             }
-            this.fullname = () -> val;
+            this.name = () -> val;
             return val;
         };
     }
@@ -49,7 +49,7 @@ public class AstClass extends AstType {
     /**
      * @return owner of this class, may be null
      */
-    public AstClass getOwner() {
+    public AsmClass getOwner() {
         return owner;
     }
 
@@ -64,7 +64,7 @@ public class AstClass extends AstType {
      * @return the full name of this class, not null
      */
     public String getFullName() {
-        return this.fullname.get();
+        return this.name.get();
     }
 
     @Override
@@ -82,9 +82,9 @@ public class AstClass extends AstType {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof AstClass)) return false;
-        AstClass aAstClass = (AstClass) o;
-        if (pkg != null ? !pkg.equals(aAstClass.pkg) : aAstClass.pkg != null) return false;
-        return owner != null ? owner.equals(aAstClass.owner) : aAstClass.owner == null;
+        if (!(o instanceof AsmClass)) return false;
+        AsmClass aAsmClass = (AsmClass) o;
+        if (pkg != null ? !pkg.equals(aAsmClass.pkg) : aAsmClass.pkg != null) return false;
+        return owner != null ? owner.equals(aAsmClass.owner) : aAsmClass.owner == null;
     }
 }
