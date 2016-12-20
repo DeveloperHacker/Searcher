@@ -42,12 +42,7 @@ public class AstMethod {
 
     @Override
     public String toString() {
-        final StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("/**\n");
-        stringBuilder.append(getJavadocComment() == null ? "" : getJavadocComment().getContent());
-        stringBuilder.append("**/\n");
-        stringBuilder.append(description.getDescription());
-        stringBuilder.append(" ").append(getBody());
-        return stringBuilder.toString();
+        final JavadocComment javadocComment = methodParts.getJavadocComment();
+        return "\t/**" + (javadocComment == null ? "" : javadocComment.getContent()) + "*/\n" + description.getDescription() + " " + getBody();
     }
 }

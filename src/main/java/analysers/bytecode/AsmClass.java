@@ -36,7 +36,7 @@ public class AsmClass extends AsmType {
         this.name = () -> {
             String val;
             if (owner == null) {
-                val = "L" + (pkg.length() > 0 ? pkg + "." : "")+ name + ";";
+                val = "L" + (pkg.length() > 0 ? pkg + "." : "") + name + ";";
             } else {
                 String ownerName = owner.getFullName();
                 val = ownerName.substring(0, ownerName.length() - 1) + "$" + name + ";";

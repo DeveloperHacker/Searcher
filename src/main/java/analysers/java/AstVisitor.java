@@ -36,7 +36,7 @@ public class AstVisitor extends VoidVisitorAdapter<Object> {
 
     @Override
     public void visit(CompilationUnit compilationUnit, Object arg) {
-        this.pkg = compilationUnit.getPackage().getName().toString();
+        this.pkg = compilationUnit.getPackage() == null ? "" : compilationUnit.getPackage().getName().toString();
         this.imports = new HashMap<>();
         for (ImportDeclaration importDeclaration: compilationUnit.getImports()) {
             if (!importDeclaration.isStatic()) {
@@ -53,7 +53,9 @@ public class AstVisitor extends VoidVisitorAdapter<Object> {
         }
         addImport("java.lang", "*");
         addImport(pkg, "*");
-        addImport("java.lang", "Object");
+        if (!this.imports.containsKey("Object")) {
+            addImport("java.lang", "Object");
+        }
         super.visit(compilationUnit, arg);
     }
 
@@ -77,7 +79,7 @@ public class AstVisitor extends VoidVisitorAdapter<Object> {
                     }
                 }
             } catch (ReflectionsException ex) {
-                System.out.println(String.format("Package %s not linked", pkg));
+                System.err.println(String.format("Package %s not linked", pkg));
                 return false;
             }
         } else {
@@ -123,12 +125,14 @@ public class AstVisitor extends VoidVisitorAdapter<Object> {
     }
 
     private String getTypeString(Type type) {
-        final String name = type.toString();
+        final String fullName = type.toString().replace('.', '$');
+        final String[] arrName = fullName.split("\\$");
+        final String name = arrName[0];
         final String pkg = this.getTypePackage(name);
         if (pkg.length() == 0 && AsmPrimitiveType.isPrimitive(name)) {
             return AsmPrimitiveType.shortRepresentation(name).toString();
         }
-        return String.format("L%s.%s;", pkg, name);
+        return String.format("L%s.%s;", pkg, fullName);
     }
 
     public Set<AstMethod> getMethods() {

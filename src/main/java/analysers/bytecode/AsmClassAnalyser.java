@@ -11,7 +11,7 @@ import java.util.*;
 public class AsmClassAnalyser extends ClassVisitor {
 
     private AsmClass current;
-    private Map<MethodDescription, List<MethodDescription>> methods = new HashMap<>();
+    private Map<MethodDescription, Set<MethodDescription>> methods = new HashMap<>();
 
     public AsmClassAnalyser(int api) {
         super(api);
@@ -23,18 +23,18 @@ public class AsmClassAnalyser extends ClassVisitor {
 
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         final MethodDescription method = Parser.parseMethod(this.current, name, desc);
-        final List<MethodDescription> innerMethods = new ArrayList<>();
+        final Set<MethodDescription> innerMethods = new HashSet<>();
         final AsmMethodAnalyser asmMethodAnalyser = new AsmMethodAnalyser(api);
         asmMethodAnalyser.visitMethodInsn = innerMethods::add;
         this.methods.put(method, innerMethods);
         return asmMethodAnalyser;
     }
 
-    public Map<MethodDescription, List<MethodDescription>> getMethods() {
+    public Map<MethodDescription, Set<MethodDescription>> getMethods() {
         return this.methods;
     }
 
-    public void setMethods(Map<MethodDescription, List<MethodDescription>> methods) {
+    public void setMethods(Map<MethodDescription, Set<MethodDescription>> methods) {
         this.methods = methods;
     }
 }
