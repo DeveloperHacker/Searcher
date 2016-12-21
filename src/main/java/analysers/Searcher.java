@@ -29,6 +29,10 @@ public class Searcher {
 
     }
 
+    public Set<AstMethod> getMethods() {
+        return this.indexedMethods.keySet();
+    }
+
     public Set<AstMethod> usages(MethodDescription attribute) {
         final Set<AstMethod> result = new HashSet<>();
         for (Map.Entry<AstMethod, Set<MethodDescription>> entry : this.indexedMethods.entrySet()) {

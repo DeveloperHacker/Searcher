@@ -49,7 +49,7 @@ public abstract class AbstractVisitor extends VoidVisitorAdapter<Object> {
 
     protected abstract String getTypePackage(String name);
 
-    protected String getTypeString(Type type) {
+    private String getTypeString(Type type) {
         final String fullName = type.toString().replace('.', '$');
         final String[] arrName = fullName.split("\\$");
         final String name = arrName[0];
