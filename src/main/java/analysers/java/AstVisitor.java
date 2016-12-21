@@ -1,21 +1,9 @@
 package analysers.java;
 
-import analysers.AstMethod;
-import analysers.MethodDescription;
-import analysers.MethodParts;
-import analysers.Parser;
-import analysers.bytecode.AsmClass;
-import analysers.bytecode.AsmPrimitiveType;
-import analysers.bytecode.AsmType;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.comments.JavadocComment;
-import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import javafx.util.Pair;
 import org.reflections.Reflections;
 import org.reflections.ReflectionsException;
@@ -26,17 +14,16 @@ import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-public class AstVisitor extends VoidVisitorAdapter<Object> {
+public class AstVisitor extends AbstractVisitor {
 
     private String pkg;
     private Map<String, String> imports;
-    private Set<AstMethod> methods = new HashSet<>();
 
     @Override
     public void visit(CompilationUnit compilationUnit, Object arg) {
         this.pkg = compilationUnit.getPackage() == null ? "" : compilationUnit.getPackage().getName().toString();
+        System.out.println(compilationUnit.getClass().getName());
         this.imports = new HashMap<>();
         for (ImportDeclaration importDeclaration: compilationUnit.getImports()) {
             if (!importDeclaration.isStatic()) {
@@ -52,7 +39,7 @@ public class AstVisitor extends VoidVisitorAdapter<Object> {
             }
         }
         addImport("java.lang", "*");
-        addImport(pkg, "*");
+        addImport(this.pkg, "*");
         if (!this.imports.containsKey("Object")) {
             addImport("java.lang", "Object");
         }
@@ -89,57 +76,21 @@ public class AstVisitor extends VoidVisitorAdapter<Object> {
     }
 
     @Override
-    public void visit(MethodDeclaration declaration, Object arg) {
-        final JavadocComment doc = declaration.getJavaDoc();
-        final Pair<String, List<String>> pair = getClassName(declaration);
-        final String ownerFullName = "L" + (pair.getKey().length() > 0 ? pair.getKey() + "." : "") + String.join("$", pair.getValue()) + ";";
-        final AsmClass owner = Parser.parseClass(ownerFullName);
-        final String name = declaration.getName();
-        final List<AsmType> parameters = declaration.getParameters().stream()
-                .map(Parameter::getType)
-                .map(this::getTypeString)
-                .map(Parser::parseType)
-                .collect(Collectors.toList());
-        final AsmType type = Parser.parseType(getTypeString(declaration.getType()));
-        final String body = declaration.getBody().toString();
-        final MethodDescription method = new MethodDescription(name, owner, type, parameters);
-        this.methods.add(new AstMethod(method, new MethodParts(doc, body)));
-        super.visit(declaration, arg);
+    protected String getTypePackage(String name) {
+        name = name.split("<")[0];
+        return this.imports.containsKey(name) ? this.imports.get(name) : null;
     }
 
-    private Pair<String, List<String>> getClassName(Node node) {
+    @Override
+    protected Pair<String, List<String>> getFullClassName(Node node) {
         final Node parent = node.getParentNode();
         if (parent == null) {
             return new Pair<>(this.pkg, new ArrayList<>());
         }
-        final Pair<String, List<String>> pair = getClassName(parent);
+        final Pair<String, List<String>> pair = getFullClassName(parent);
         if (parent instanceof ClassOrInterfaceDeclaration) {
             pair.getValue().add(((ClassOrInterfaceDeclaration) parent).getName());
         }
         return pair;
-    }
-
-    private String getTypePackage(String name) {
-        name = name.split("<")[0];
-        return this.imports.containsKey(name) ? this.imports.get(name) : "";
-    }
-
-    private String getTypeString(Type type) {
-        final String fullName = type.toString().replace('.', '$');
-        final String[] arrName = fullName.split("\\$");
-        final String name = arrName[0];
-        final String pkg = this.getTypePackage(name);
-        if (pkg.length() == 0 && AsmPrimitiveType.isPrimitive(name)) {
-            return AsmPrimitiveType.shortRepresentation(name).toString();
-        }
-        return String.format("L%s.%s;", pkg, fullName);
-    }
-
-    public Set<AstMethod> getMethods() {
-        return this.methods;
-    }
-
-    public void setMethods(Set<AstMethod> methods) {
-        this.methods = methods;
     }
 }

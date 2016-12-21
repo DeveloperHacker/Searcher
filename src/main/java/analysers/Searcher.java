@@ -1,7 +1,9 @@
 package analysers;
 
 import analysers.bytecode.AsmClassAnalyser;
+import analysers.java.AbstractVisitor;
 import analysers.java.AstVisitor;
+import analysers.java.SimpleAstVisitor;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.CompilationUnit;
@@ -9,8 +11,10 @@ import javassist.NotFoundException;
 import org.apache.maven.shared.utils.io.DirectoryScanner;
 import org.javatuples.Pair;
 import org.objectweb.asm.ClassReader;
+import utils.Sets;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,22 +43,13 @@ public class Searcher {
     }
 
     public Pair<AstMethod, Set<AstMethod>> associate(MethodDescription method) throws NotFoundException {
-        AstMethod astMethod = null;
-        for (AstMethod m : this.indexedMethods.keySet()) {
-            if (m.getDescription().equals(method)) {
-                astMethod = m;
-                break;
-            }
-        }
-        if (astMethod == null) {
-            throw new NotFoundException(String.format("Method with decryption %s not found", method.toString()));
-        }
+        AstMethod astMethod = Sets.getElement(this.indexedMethods.keySet(), method);
         return new Pair<>(astMethod, this.usages(astMethod.getDescription()));
     }
 
-    public static Set<String> searchCodes(String passToFolder, String extension) {
+    public static Set<String> loadJava(String passToFolder) {
         final DirectoryScanner scanner = new DirectoryScanner();
-        scanner.setIncludes("**\\*." + extension);
+        scanner.setIncludes("**\\*.java");
         scanner.setBasedir(passToFolder);
         scanner.setCaseSensitive(false);
         scanner.scan();
@@ -62,18 +57,11 @@ public class Searcher {
         return Arrays.stream(codes).collect(Collectors.toSet());
     }
 
-    public static Searcher simple(String passToFolder) throws Parser.ParseException {
-        return simple(searchCodes(passToFolder, "java"));
+    public static Searcher simple(String passToFolder) throws FileNotFoundException {
+        return simple(loadJava(passToFolder));
     }
 
-    public static Searcher simple(Set<String> javaCodes) {
-        final Searcher self = new Searcher();
-        return self;
-    }
-
-    public static Searcher normal(Set<String> javaCodes, Set<String> byteCodes) throws IOException {
-        final Searcher self = new Searcher();
-        final AsmClassAnalyser analyser = new AsmClassAnalyser(ASM5);
+    private static Map<MethodDescription, Set<MethodDescription>> indexByteCodes(Set<String> byteCodes, AsmClassAnalyser analyser) throws IOException {
         for (String code : byteCodes) {
             try {
                 final ClassReader reader  = new ClassReader(code);
@@ -82,8 +70,11 @@ public class Searcher {
                 ex.printStackTrace();
             }
         }
-        final AstVisitor visitor = new AstVisitor();
-        for (String code: javaCodes) {
+        return analyser.getMethods();
+    }
+
+    private static Set<AstMethod> indexJavaCodes(Set<String> javaCodes, AbstractVisitor visitor) throws FileNotFoundException {
+        for (String code : javaCodes) {
             try {
                 final FileInputStream in = new FileInputStream(code);
                 final CompilationUnit ast = JavaParser.parse(in);
@@ -92,8 +83,22 @@ public class Searcher {
                 ex.printStackTrace();
             }
         }
-        final Map<MethodDescription, Set<MethodDescription>> byteMethods = analyser.getMethods();
-        final Set<AstMethod> astMethods = visitor.getMethods();
+        return visitor.getMethods();
+    }
+
+    public static Searcher simple(Set<String> javaCodes) throws FileNotFoundException {
+        final Searcher self = new Searcher();
+        final Set<AstMethod> astMethods = Searcher.indexJavaCodes(javaCodes, new SimpleAstVisitor());
+        for (AstMethod method : astMethods) {
+            self.indexedMethods.put(method, new HashSet<>());
+        }
+        return self;
+    }
+
+    public static Searcher normal(Set<String> javaCodes, Set<String> byteCodes) throws IOException {
+        final Searcher self = new Searcher();
+        final Map<MethodDescription, Set<MethodDescription>> byteMethods = Searcher.indexByteCodes(byteCodes, new AsmClassAnalyser(ASM5));
+        final Set<AstMethod> astMethods = Searcher.indexJavaCodes(javaCodes, new AstVisitor());
         for (AstMethod method : astMethods) {
             if (byteMethods.containsKey(method.getDescription())) {
                 self.indexedMethods.put(method, byteMethods.get(method.getDescription()));

@@ -1,8 +1,9 @@
 package analysers;
 
 import com.github.javaparser.ast.comments.JavadocComment;
+import utils.Shell;
 
-public class AstMethod {
+public class AstMethod implements Shell<MethodDescription> {
 
     private final MethodDescription description;
     private final MethodParts methodParts;
@@ -14,15 +15,15 @@ public class AstMethod {
     }
 
     public MethodDescription getDescription() {
-        return description;
+        return this.description;
     }
 
     public JavadocComment getJavadocComment() {
-        return methodParts.getJavadocComment();
+        return this.methodParts.getJavadocComment();
     }
 
     public String getBody() {
-        return methodParts.getBody();
+        return this.methodParts.getBody();
     }
 
     @Override
@@ -32,17 +33,22 @@ public class AstMethod {
 
         final AstMethod astMethod = (AstMethod) o;
 
-        return description.equals(astMethod.description);
+        return this.description.equals(astMethod.description);
     }
 
     @Override
     public int hashCode() {
-        return description.hashCode();
+        return this.description.hashCode();
     }
 
     @Override
     public String toString() {
-        final JavadocComment javadocComment = methodParts.getJavadocComment();
-        return "\t/**" + (javadocComment == null ? "" : javadocComment.getContent()) + "*/\n" + description.getDescription() + " " + getBody();
+        final JavadocComment javadocComment = this.methodParts.getJavadocComment();
+        return "\t/**" + (javadocComment == null ? "" : javadocComment.getContent()) + "*/\n" + this.description.getDescription() + " " + getBody();
+    }
+
+    @Override
+    public MethodDescription inner() {
+        return this.description;
     }
 }
