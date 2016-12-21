@@ -4,7 +4,7 @@ import javassist.NotFoundException;
 
 import java.util.Set;
 
-public class Sets {
+public final class Sets {
 
     private Sets() {
 

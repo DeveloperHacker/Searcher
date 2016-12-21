@@ -9,7 +9,7 @@ public abstract class AsmType {
     }
 
     /**
-     * @return name of * this type, not null
+     * @return name of this type, not null
      */
     public String getName() {
         return name;

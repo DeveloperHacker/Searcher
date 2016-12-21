@@ -1,11 +1,12 @@
 import com.github.javaparser.ParseException;
 import javassist.NotFoundException;
 
+import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 
 public class Main {
 
-    public static void main(String args[]) throws ClassNotFoundException, IOException, ParseException, NotFoundException {
+    public static void main(String args[]) throws ClassNotFoundException, IOException, ParseException, NotFoundException, XMLStreamException {
         final String cwd = System.getProperty("user.dir");
 ////        final Set<String> byteCodes = new HashSet<>();
 ////        byteCodes.add("analysers.MethodDescription");
@@ -19,7 +20,7 @@ public class Main {
 //        System.out.println(association.getValue0());
 //        System.out.println("-------------------------------");
 //        association.getValue1().forEach(System.out::println);
-        Packer.packJavaDocs(cwd, cwd + "/packJavaDocs.txt");
+        Packer.packJavaDocs(cwd, cwd, "packJavaDocs");
     }
 }
 
