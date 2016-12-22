@@ -53,12 +53,12 @@ public class Searcher {
 
     public static Set<String> loadJava(String passToFolder) {
         final DirectoryScanner scanner = new DirectoryScanner();
-        scanner.setIncludes("**\\*.java");
+        scanner.setIncludes("**/*.java");
         scanner.setBasedir(passToFolder);
         scanner.setCaseSensitive(false);
         scanner.scan();
         final String[] codes = scanner.getIncludedFiles();
-        return Arrays.stream(codes).collect(Collectors.toSet());
+        return Arrays.stream(codes).map(code -> passToFolder + "/" + code).collect(Collectors.toSet());
     }
 
     public static Searcher simple(String passToFolder) throws FileNotFoundException {
