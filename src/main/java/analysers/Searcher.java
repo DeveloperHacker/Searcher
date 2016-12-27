@@ -80,11 +80,13 @@ public class Searcher {
     private static Set<AstMethod> indexJavaCodes(Set<String> javaCodes, AbstractVisitor visitor) throws FileNotFoundException {
         for (String code : javaCodes) {
             try {
+                System.out.println(code);
                 final FileInputStream in = new FileInputStream(code);
                 final CompilationUnit ast = JavaParser.parse(in);
                 visitor.visit(ast, null);
             } catch (ParseException | Parser.ParseException ex) {
                 ex.printStackTrace();
+                throw new RuntimeException();
             }
         }
         return visitor.getMethods();

@@ -4,7 +4,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import javafx.util.Pair;
+import org.javatuples.Pair;
 import org.reflections.Reflections;
 import org.reflections.ReflectionsException;
 import org.reflections.scanners.ResourcesScanner;
@@ -89,7 +89,7 @@ public class AstVisitor extends AbstractVisitor {
         }
         final Pair<String, List<String>> pair = getFullClassName(parent);
         if (parent instanceof ClassOrInterfaceDeclaration) {
-            pair.getValue().add(((ClassOrInterfaceDeclaration) parent).getName());
+            pair.getValue1().add(((ClassOrInterfaceDeclaration) parent).getName());
         }
         return pair;
     }

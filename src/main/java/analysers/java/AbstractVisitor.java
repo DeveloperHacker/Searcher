@@ -9,12 +9,10 @@ import analysers.bytecode.AsmPrimitiveType;
 import analysers.bytecode.AsmType;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.comments.JavadocComment;
-import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import javafx.util.Pair;
 import javassist.NotFoundException;
+import org.javatuples.Pair;
 import utils.Sets;
 
 import java.util.HashSet;
@@ -30,15 +28,13 @@ public abstract class AbstractVisitor extends VoidVisitorAdapter<Object> {
     public void visit(MethodDeclaration declaration, Object arg) {
         final JavadocComment doc = declaration.getJavaDoc();
         final Pair<String, List<String>> pair = getFullClassName(declaration);
-        final String ownerFullName = "L" + (pair.getKey().length() > 0 ? pair.getKey() + "." : "") + String.join("$", pair.getValue()) + ";";
+        final String ownerFullName = "L" + (pair.getValue0().length() > 0 ? pair.getValue0() + "." : "") + String.join("$", pair.getValue1()) + ";";
         final AsmClass owner = Parser.parseClass(ownerFullName);
         final String name = declaration.getName();
-        final List<AsmType> parameters = declaration.getParameters().stream()
-                .map(Parameter::getType)
-                .map(this::getTypeString)
-                .map(Parser::parseType)
+        final List<Pair<AsmType, String>> parameters = declaration.getParameters().stream()
+                .map(parameter -> new Pair<>(Parser.parseType(this.getTypeString(parameter.getType().toString())), parameter.getName()))
                 .collect(Collectors.toList());
-        final AsmType type = Parser.parseType(getTypeString(declaration.getType()));
+        final AsmType type = Parser.parseType(getTypeString(declaration.getType().toString()));
         final String body = declaration.getBody() == null ? "" : declaration.getBody().toString();
         final MethodDescription method = new MethodDescription(name, owner, type, parameters);
         this.methods.add(new AstMethod(method, new MethodParts(doc, body)));
@@ -49,18 +45,26 @@ public abstract class AbstractVisitor extends VoidVisitorAdapter<Object> {
 
     protected abstract String getTypePackage(String name);
 
-    private String getTypeString(Type type) {
-        final String fullName = type.toString().replace('.', '$');
-        final String[] arrName = fullName.split("\\$");
-        final String name = arrName[0];
-        final String pkg = this.getTypePackage(name);
+    private String getTypeString(String fullName) {
+        final String name = fullName.split("\\<")[0];
+        final String generic = fullName.substring(name.length());
+        final String[] arrName = name.replace('.', '$').split("$");
+        final String pkg = this.getTypePackage(arrName[arrName.length - 1]);
         if (pkg == null) {
-            if(AsmPrimitiveType.isPrimitive(name)) {
-                return AsmPrimitiveType.shortRepresentation(name).toString();
+            if (AsmPrimitiveType.isPrimitive(fullName)) {
+                return AsmPrimitiveType.shortRepresentation(fullName).toString();
             }
-            return String.format("L%s;", arrName[arrName.length - 1]);
+            return String.format("L%s%s;", name, this.getGenericString(generic));
         }
-        return String.format("L%s.%s;", pkg, fullName);
+        return String.format("L%s.%s%s;", pkg, name, this.getGenericString(generic));
+    }
+
+    private String getGenericString(String generic) {
+        if (generic.length() == 0) return "";
+        List<String> generics = Parser.parseGenerics(generic).stream()
+                .map(this::getTypeString)
+                .collect(Collectors.toList());
+        return String.format("<%s>", String.join(", ", generics));
     }
 
     public AstMethod getMethod(MethodDescription description) throws NotFoundException {

@@ -2,13 +2,17 @@ import analysers.AstMethod;
 import analysers.Searcher;
 import analysers.bytecode.AsmType;
 import com.github.javaparser.ast.comments.JavadocComment;
+import org.javatuples.Pair;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class Packer {
 
@@ -23,6 +27,7 @@ public final class Packer {
     private static final String paramTagName = "param";
     private static final String returnTagName = "return";
     private static final String seeTagName = "see";
+    private static final String throwsTagName = "throws";
     private static final String descriptionTagName = "description";
     private static final String nameTagName = "name";
     private static final String typeTagName = "type";
@@ -30,7 +35,6 @@ public final class Packer {
     private static final String ownerTagName = "owner";
 
     public static void packJavaDocs(String passToFolder, String passToFile, String fileName) throws IOException, XMLStreamException {
-
         final Searcher searcher = Searcher.simple(passToFolder);
         final Set<AstMethod> methods = searcher.getMethods();
         XMLOutputFactory output = XMLOutputFactory.newInstance();
@@ -40,28 +44,19 @@ public final class Packer {
         for (AstMethod method : methods) {
             final JavadocComment doc = method.getJavadocComment();
             if (doc == null) continue;
-            final String[] tokens = doc.getContent().split("(\n(\\s|\t)*\\*|\t|\\s)+");
+            final List<String> tokens = Arrays.stream(doc.getContent().split("(\n(\\s|\t)*\\*|\t|\\s)+"))
+                    .filter(token -> token.length() > 0)
+                    .collect(Collectors.toList());
+            if (tokens.size() == 0 || tokens.get(0).length() == 0) continue;
             writer.writeStartElement(methodTagName);
             writer.writeStartElement(javaDocTagName);
-
-            writer.writeStartElement(headTagName);
-            for (String token : tokens) {
-                switch (token) {
-                    case "@return" : {
-                        writer.writeEndElement();
-                        writer.writeStartElement(returnTagName);
-                        break;
-                    }
-                    case "@param" : {
-                        writer.writeEndElement();
-                        writer.writeStartElement(paramTagName);
-                        break;
-                    }
-                    case "@see" : {
-                        writer.writeEndElement();
-                        writer.writeStartElement(seeTagName);
-                        break;
-                    }
+            writer.writeStartElement(Packer.getTag(tokens.get(0)));
+            writer.writeCharacters(tokens.get(0) + " ");
+            for (String token : tokens.subList(1, tokens.size())) {
+                String tag = Packer.getTag(token);
+                if (!tag.equals(headTagName)) {
+                    writer.writeEndElement();
+                    writer.writeStartElement(tag);
                 }
                 writer.writeCharacters(token + " ");
             }
@@ -75,9 +70,14 @@ public final class Packer {
             writer.writeCharacters(method.getDescription().getType().getName());
             writer.writeEndElement();
             writer.writeStartElement(parametersTagName);
-            for (AsmType type : method.getDescription().getParameters()) {
+            for (Pair<AsmType, String> type : method.getDescription().getParameters()) {
+                writer.writeStartElement(paramTagName);
                 writer.writeStartElement(typeTagName);
-                writer.writeCharacters(type.getName());
+                writer.writeCharacters(type.getValue0().getName());
+                writer.writeEndElement();
+                writer.writeStartElement(nameTagName);
+                writer.writeCharacters(type.getValue1());
+                writer.writeEndElement();
                 writer.writeEndElement();
             }
             writer.writeEndElement();
@@ -89,5 +89,15 @@ public final class Packer {
         }
         writer.writeEndElement();
         writer.close();
+    }
+
+    private static String getTag(String token) {
+        switch (token) {
+            case "@return": return returnTagName;
+            case "@param": return paramTagName;
+            case "@see": return seeTagName;
+            case "@throws": return throwsTagName;
+            default: return headTagName;
+        }
     }
 }

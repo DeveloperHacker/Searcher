@@ -61,7 +61,6 @@ public class AsmClass extends AsmType {
     }
 
     /**
-     * @param lel asda
      * @return the full name of this class, not null
      */
     public String getFullName() {

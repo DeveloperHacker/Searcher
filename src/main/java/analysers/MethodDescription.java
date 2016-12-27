@@ -2,6 +2,7 @@ package analysers;
 
 import analysers.bytecode.AsmClass;
 import analysers.bytecode.AsmType;
+import org.javatuples.Pair;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,15 +12,15 @@ public class MethodDescription {
     private final String name;
     private final AsmClass owner;
     private final AsmType type;
-    private final List<AsmType> parameters;
+    private final List<Pair<AsmType, String>> parameters;
     private final String description;
 
-    public MethodDescription(String name, AsmClass owner, AsmType type, List<AsmType> parameters) {
+    public MethodDescription(String name, AsmClass owner, AsmType type, List<Pair<AsmType, String>> parameters) {
         this.name = name;
         this.owner = owner;
         this.type = type;
         this.parameters = parameters;
-        final String params = parameters.stream().map(AsmType::toString).collect(Collectors.joining(""));
+        final String params = parameters.stream().map(pair -> pair.getValue0().toString() + pair.getValue1()).collect(Collectors.joining(""));
         this.description = String.format("%s%s(%s)%s", owner.toString(), name, params, type.toString());
     }
 
@@ -35,7 +36,7 @@ public class MethodDescription {
         return owner;
     }
 
-    public List<AsmType> getParameters() {
+    public List<Pair<AsmType, String>> getParameters() {
         return parameters;
     }
 

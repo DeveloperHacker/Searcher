@@ -96,6 +96,35 @@ public class Parser {
         return new Triplet<>(generics, parameters, type);
     }
 
+    public static List<String> parseGenerics(String generic) {
+        final PrimitiveIterator.OfInt it = generic.replace(" ", "").chars().iterator();
+        char ch = (char) it.nextInt();
+        return Parser.parseGenerics(ch, it);
+    }
+
+    private static List<String> parseGenerics(char ch, PrimitiveIterator.OfInt it) {
+        final List<String> generics = new ArrayList<>();
+        if (ch == '<') {
+            StringBuilder generic = new StringBuilder();
+            int brackets = 1;
+            while (true) {
+                ch = (char) it.nextInt();
+                if (ch == '>') brackets--;
+                if (ch == '<') brackets++;
+                if (brackets == 1 && ch == ',' || brackets == 0) {
+                    if (generic.length() == 0) throw new Parser.ParseException("Expected 'type name' or '>'");
+                    generics.add(generic.toString());
+                    generic = new StringBuilder();
+                } else {
+                    generic.append(ch);
+                }
+                if (brackets == 0) break;
+            }
+            if (generic.length() != 0) throw new Parser.ParseException("Expected ';' before '>'");
+        }
+        return generics;
+    }
+
     public static AsmType parseType(String name) {
         final char first = name.charAt(0);
         if (AsmPrimitiveType.isPrimitive(first)) {
@@ -135,7 +164,10 @@ public class Parser {
             }
         }
         if (brackets > 0) throw new ParseException("Expected '>' before 'eof'");
-        if (it.hasNext()) throw new ParseException("Expected 'eof'");
+        if (it.hasNext()) {
+            System.out.println(full_name);
+            throw new ParseException("Expected 'eof'");
+        }
         final List<String> temp = new ArrayList<>(Arrays.asList(name.toString().replace("/", ".").split("\\.")));
         final List<String> path = new ArrayList<>(temp.subList(0, temp.size() - 1));
         final List<String> names = new ArrayList<>(Arrays.asList(temp.get(temp.size() - 1).split("\\$")));
@@ -150,7 +182,10 @@ public class Parser {
     public static MethodDescription parseMethod(AsmClass owner, String name, String desc) {
         Pair<List<String>, String> pair = Parser.parseDescription(desc);
         AsmType type = Parser.parseType(pair.getValue1());
-        List<AsmType> parameters = pair.getValue0().stream().map(Parser::parseType).collect(Collectors.toList());
+        List<Pair<AsmType, String>> parameters = pair.getValue0().stream()
+                .map(Parser::parseType)
+                .map(t -> new Pair<>(t, ""))
+                .collect(Collectors.toList());
         return new MethodDescription(name, owner, type, parameters);
     }
 }
