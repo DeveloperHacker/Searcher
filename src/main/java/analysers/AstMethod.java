@@ -22,7 +22,7 @@ public class AstMethod implements Shell<MethodDescription> {
         return this.methodParts.getJavadocComment();
     }
 
-    public String getBody() {
+    private String getBody() {
         return this.methodParts.getBody();
     }
 

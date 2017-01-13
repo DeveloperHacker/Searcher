@@ -6,9 +6,9 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.function.Consumer;
 
-public class AsmMethodAnalyser extends MethodVisitor {
+class AsmMethodAnalyser extends MethodVisitor {
 
-    public Consumer<MethodDescription> visitMethodInsn = null;
+    public Consumer<MethodDescription> visitMethodInst = null;
 
     public AsmMethodAnalyser(int i) {
         super(i);
@@ -17,6 +17,6 @@ public class AsmMethodAnalyser extends MethodVisitor {
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
         MethodDescription method = Parser.parseMethod('L' + owner + ';', name, desc);
-        if (this.visitMethodInsn != null) this.visitMethodInsn.accept(method);
+        if (this.visitMethodInst != null) this.visitMethodInst.accept(method);
     }
 }

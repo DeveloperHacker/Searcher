@@ -46,7 +46,7 @@ public abstract class AbstractVisitor extends VoidVisitorAdapter<Object> {
     protected abstract String getTypePackage(String name);
 
     private String getTypeString(String fullName) {
-        final String name = fullName.split("\\<")[0];
+        final String name = fullName.split("<")[0];
         final String generic = fullName.substring(name.length());
         final String[] arrName = name.replace('.', '$').split("$");
         final String pkg = this.getTypePackage(arrName[arrName.length - 1]);

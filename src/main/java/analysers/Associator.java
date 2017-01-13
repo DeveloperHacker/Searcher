@@ -1,0 +1,6 @@
+package analysers;
+
+
+class Associator {
+
+}

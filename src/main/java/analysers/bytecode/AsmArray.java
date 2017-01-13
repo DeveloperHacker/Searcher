@@ -2,7 +2,7 @@ package analysers.bytecode;
 
 public class AsmArray extends AsmType {
 
-    private AsmType inner;
+    private final AsmType inner;
 
     public AsmArray(AsmType inner) {
         super("[");

@@ -13,8 +13,8 @@ public class AsmClassAnalyser extends ClassVisitor {
     private AsmClass current;
     private Map<MethodDescription, Set<MethodDescription>> methods = new HashMap<>();
 
-    public AsmClassAnalyser(int api) {
-        super(api);
+    public AsmClassAnalyser() {
+        super(org.objectweb.asm.Opcodes.ASM5);
     }
 
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
@@ -25,7 +25,7 @@ public class AsmClassAnalyser extends ClassVisitor {
         final MethodDescription method = Parser.parseMethod(this.current, name, desc);
         final Set<MethodDescription> innerMethods = new HashSet<>();
         final AsmMethodAnalyser asmMethodAnalyser = new AsmMethodAnalyser(api);
-        asmMethodAnalyser.visitMethodInsn = innerMethods::add;
+        asmMethodAnalyser.visitMethodInst = innerMethods::add;
         this.methods.put(method, innerMethods);
         return asmMethodAnalyser;
     }

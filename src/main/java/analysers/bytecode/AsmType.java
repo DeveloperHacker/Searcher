@@ -4,7 +4,7 @@ public abstract class AsmType {
 
     private final String name;
 
-    public AsmType(String name) {
+    AsmType(String name) {
         this.name = name;
     }
 

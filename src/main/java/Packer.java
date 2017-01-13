@@ -1,5 +1,4 @@
 import analysers.AstMethod;
-import analysers.Searcher;
 import analysers.bytecode.AsmType;
 import com.github.javaparser.ast.comments.JavadocComment;
 import org.javatuples.Pair;
@@ -14,7 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public final class Packer {
+final class Packer {
 
     private Packer() {
 
@@ -34,17 +33,15 @@ public final class Packer {
     private static final String parametersTagName = "parameters";
     private static final String ownerTagName = "owner";
 
-    public static void packJavaDocs(String passToFolder, String passToFile, String fileName) throws IOException, XMLStreamException {
-        final Searcher searcher = Searcher.simple(passToFolder);
-        final Set<AstMethod> methods = searcher.getMethods();
-        XMLOutputFactory output = XMLOutputFactory.newInstance();
-        XMLStreamWriter writer = output.createXMLStreamWriter(new FileWriter(passToFile + "/" + fileName + ".xml"));
+    public static void pack(String fileName, Set<AstMethod> methods) throws IOException, XMLStreamException {
+        final XMLOutputFactory output = XMLOutputFactory.newInstance();
+        final XMLStreamWriter writer = output.createXMLStreamWriter(new FileWriter(fileName + ".xml"));
         writer.writeStartDocument();
         writer.writeStartElement(methodsTagName);
         for (AstMethod method : methods) {
             final JavadocComment doc = method.getJavadocComment();
             if (doc == null) continue;
-            final List<String> tokens = Arrays.stream(doc.getContent().split("(\n(\\s|\t)*\\*|\t|\\s)+"))
+            final List<String> tokens = Arrays.stream(doc.getContent().split("(\n(\\s|\t)*/?\\*|\t|\\s)+"))
                     .filter(token -> token.length() > 0)
                     .collect(Collectors.toList());
             if (tokens.size() == 0 || tokens.get(0).length() == 0) continue;
