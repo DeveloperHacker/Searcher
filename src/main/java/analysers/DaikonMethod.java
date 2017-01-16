@@ -8,7 +8,8 @@ import java.util.Set;
 
 public class DaikonMethod {
 
-    final public MethodDescription description;
+
+    final private MethodDescription description;
     final public Set<String> enter = new HashSet<>();
     final public Set<String> exit = new HashSet<>();
     final public Map<Integer, Set<String>> exits = new HashMap<>();
@@ -19,11 +20,15 @@ public class DaikonMethod {
 
     @Override
     public String toString() {
-        return "DaikonMethod{" +
-                "description=" + description +
-                ", enter=" + enter +
-                ", exit=" + exit +
-                ", exits=" + exits +
-                '}';
+        return String.format(
+                "DaikonMethod{description=%s, enter=%s, exit=%s, exits=%s}",
+                description.toString(),
+                enter.toString(),
+                exit.toString(),
+                exits.toString());
+    }
+
+    public MethodDescription getDescription() {
+        return description;
     }
 }

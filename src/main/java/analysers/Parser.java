@@ -16,7 +16,7 @@ public class Parser {
 
     @FunctionalInterface
     private interface Function<X, Y, Z> {
-        public Z apply(X x, Y y);
+        Z apply(X x, Y y);
     }
 
     private static <R> R parseHeader(String header, Function<Character, PrimitiveIterator.OfInt, R> parse) {
@@ -138,12 +138,14 @@ public class Parser {
 
     public static AsmType parseType(String name) {
         final char first = name.charAt(0);
-        if (AsmPrimitiveType.isPrimitive(first)) {
-            return new AsmPrimitiveType(first);
-        } else if (first == 'L') {
+        if (first == 'L') {
             return Parser.parseClass(name);
         } else if (first == '[') {
             return new AsmArray(Parser.parseType(name.substring(1, name.length())));
+        } else if (AsmPrimitiveType.isPrimitive(name)) {
+            return new AsmPrimitiveType(name);
+        } if (AsmPrimitiveType.isPrimitive(first)) {
+            return new AsmPrimitiveType(first);
         } else {
             throw new ParseException("Expected the target symbol in begin word", name);
         }
@@ -205,7 +207,7 @@ public class Parser {
             throw new ParseException("Daikon method description have wrong format", daikonMethodDescription);
         final String ownerFullName = String.format("L%s;", matcher.group(1).substring(0, matcher.group(1).length() - 1));
         final AsmClass owner = Parser.parseClass(ownerFullName);
-        final String name = matcher.group(3);
+        final String name = matcher.group(3).equals(owner.getName()) ? "<init>" : matcher.group(3);
         final List<String> arguments = new ArrayList<>();
         final PrimitiveIterator.OfInt it = matcher.group(4).chars().iterator();
         StringBuilder token = new StringBuilder();
@@ -221,11 +223,19 @@ public class Parser {
                 token = new StringBuilder();
             }
         }
+        if (token.length() == 0) {
+            if (arguments.size() != 0) {
+                throw new ParseException("Expected 'type name' or '>'", daikonMethodDescription);
+            }
+        } else {
+            arguments.add(token.toString());
+        }
         final List<Pair<AsmType, String>> parameters = arguments.stream()
+                .map(type -> AsmPrimitiveType.isPrimitive(type) ? type : String.format("L%s;", type))
                 .map(Parser::parseType)
                 .map(t -> new Pair<>(t, ""))
                 .collect(Collectors.toList());
-        return new MethodDescription(name, owner, new AsmClass("", null, ""), parameters);
+        return new MethodDescription(name, owner, new AsmPrimitiveType("void"), parameters);
     }
 
     static class ParseException extends IllegalArgumentException {
@@ -234,7 +244,7 @@ public class Parser {
         final String parsable;
 
         ParseException(String message, String parsable) {
-            super(message + ":in " + (parsable == null ? "..." : parsable));
+            super(message + " :in " + (parsable == null ? "..." : parsable));
             this.message = message;
             this.parsable = parsable;
         }

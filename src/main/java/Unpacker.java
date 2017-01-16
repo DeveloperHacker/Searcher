@@ -42,15 +42,23 @@ public final class Unpacker {
                     }
                     final MethodDescription description = Parser.parseDaikonMethodDescription(pair[0]);
                     method = new DaikonMethod(description);
-                    if (!methods.containsKey(description)) methods.put(description, method);
+                    if (!methods.containsKey(description)) {
+                        methods.put(description, method);
+                    } else {
+                        method = methods.get(description);
+                    }
                     state = State.READ_BODY;
                 } else {
                     if (line.equals(end)) break;
                     if (line.equals(delimiter)) {
                         state = State.READ_HEAD;
                     } else {
-                        if ("ENTER".equals(id)) method.enter.add(line);
-                        else if ("EXIT".equals(id)) method.exit.add(line);
+                        if ("ENTER".equals(id)) {
+                            method.enter.add(line);
+                        }
+                        else if ("EXIT".equals(id)) {
+                            method.exit.add(line);
+                        }
                         else {
                             final Pattern pattern = Pattern.compile("EXIT([0-9]+)");
                             final Matcher matcher = pattern.matcher(id);

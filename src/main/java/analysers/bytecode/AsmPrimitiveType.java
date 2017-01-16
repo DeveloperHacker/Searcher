@@ -42,7 +42,7 @@ public class AsmPrimitiveType extends AsmType {
         if (!AsmPrimitiveType.isPrimitive(name)) {
             throw new IllegalArgumentException();
         }
-        return name;
+        return types.get(name).toString();
     }
 
     public static boolean isPrimitive(String type) {

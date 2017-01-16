@@ -1,4 +1,5 @@
 import analysers.AstMethod;
+import analysers.DaikonMethod;
 import analysers.bytecode.AsmType;
 import com.github.javaparser.ast.comments.JavadocComment;
 import org.javatuples.Pair;
@@ -10,6 +11,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,10 +34,17 @@ final class Packer {
     private static final String typeTagName = "type";
     private static final String parametersTagName = "parameters";
     private static final String ownerTagName = "owner";
+    private static final String contractTagName = "contract";
+    private static final String enterTagName = "enter";
+    private static final String entersTagName = "enters";
+    private static final String exitTagName = "exit";
+    private static final String exitsTagName = "exits";
+    private static final String exitIdTagName = "exitId";
+    private static final String exitIdsTagName = "exitIds";
 
-    public static void pack(String fileName, Set<AstMethod> methods) throws IOException, XMLStreamException {
+    public static void packAstMethods(String fileName, Set<AstMethod> methods) throws IOException, XMLStreamException {
         final XMLOutputFactory output = XMLOutputFactory.newInstance();
-        final XMLStreamWriter writer = output.createXMLStreamWriter(new FileWriter(fileName + ".xml"));
+        final XMLStreamWriter writer = output.createXMLStreamWriter(new FileWriter(fileName));
         writer.writeStartDocument();
         writer.writeStartElement(methodsTagName);
         for (AstMethod method : methods) {
@@ -80,6 +89,72 @@ final class Packer {
             writer.writeEndElement();
             writer.writeStartElement(ownerTagName);
             writer.writeCharacters(method.getDescription().getOwner().getName());
+            writer.writeEndElement();
+            writer.writeEndElement();
+            writer.writeEndElement();
+        }
+        writer.writeEndElement();
+        writer.close();
+    }
+
+    public static void packDaikonMethods(String fileName, Set<DaikonMethod> methods) throws XMLStreamException, IOException {
+        final XMLOutputFactory output = XMLOutputFactory.newInstance();
+        final XMLStreamWriter writer = output.createXMLStreamWriter(new FileWriter(fileName));
+        writer.writeStartDocument();
+        writer.writeStartElement(methodsTagName);
+        for (DaikonMethod method : methods) {
+            writer.writeStartElement(methodTagName);
+            writer.writeStartElement(descriptionTagName);
+            writer.writeStartElement(nameTagName);
+            writer.writeCharacters(method.getDescription().getName());
+            writer.writeEndElement();
+            writer.writeStartElement(typeTagName);
+            writer.writeCharacters(method.getDescription().getType().getName());
+            writer.writeEndElement();
+            writer.writeStartElement(parametersTagName);
+            for (Pair<AsmType, String> type : method.getDescription().getParameters()) {
+                writer.writeStartElement(paramTagName);
+                writer.writeStartElement(typeTagName);
+                writer.writeCharacters(type.getValue0().getName());
+                writer.writeEndElement();
+                writer.writeStartElement(nameTagName);
+                writer.writeCharacters(type.getValue1());
+                writer.writeEndElement();
+                writer.writeEndElement();
+            }
+            writer.writeEndElement();
+            writer.writeStartElement(ownerTagName);
+            writer.writeCharacters(method.getDescription().getOwner().getName());
+            writer.writeEndElement();
+            writer.writeEndElement();
+            writer.writeStartElement(contractTagName);
+            writer.writeStartElement(entersTagName);
+            for (String enter : method.enter) {
+                writer.writeStartElement(enterTagName);
+                writer.writeCharacters(enter);
+                writer.writeEndElement();
+            }
+            writer.writeEndElement();
+            writer.writeStartElement(exitsTagName);
+            for (String exit : method.exit) {
+                writer.writeStartElement(exitTagName);
+                writer.writeCharacters(exit);
+                writer.writeEndElement();
+            }
+            writer.writeEndElement();
+            writer.writeStartElement(exitIdsTagName);
+            for (Map.Entry<Integer, Set<String>> entry : method.exits.entrySet()) {
+                writer.writeStartElement(exitIdTagName);
+                writer.writeCharacters(entry.getKey().toString());
+                writer.writeEndElement();
+                writer.writeStartElement(exitsTagName);
+                for (String exit : entry.getValue()) {
+                    writer.writeStartElement(exitTagName);
+                    writer.writeCharacters(exit);
+                    writer.writeEndElement();
+                }
+                writer.writeEndElement();
+            }
             writer.writeEndElement();
             writer.writeEndElement();
             writer.writeEndElement();
