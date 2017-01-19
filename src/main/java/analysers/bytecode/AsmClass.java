@@ -63,7 +63,7 @@ public class AsmClass extends AsmType {
     /**
      * @return the full name of this class, not null
      */
-    private String getFullName() {
+    public String getFullName() {
         return this.name.get();
     }
 

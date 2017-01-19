@@ -11,7 +11,6 @@ import javassist.NotFoundException;
 import org.apache.maven.shared.utils.io.DirectoryScanner;
 import org.javatuples.Pair;
 import org.objectweb.asm.ClassReader;
-import utils.Sets;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -21,32 +20,30 @@ import java.util.stream.Collectors;
 
 public class Searcher {
 
-    private final Map<AstMethod, Set<MethodDescription>> indexedMethods = new HashMap<>();
+    private final Map<MethodDescription, Set<MethodDescription>> indexedMethods = new HashMap<>();
+    private final Map<MethodDescription, Pair<AstMethod, DaikonMethod>> methods = new HashMap<>();
 
     private Searcher() {
 
     }
 
-    public Set<AstMethod> getMethods() {
-        return this.indexedMethods.keySet();
+    public Pair<AstMethod, DaikonMethod> getMethod(MethodDescription description) {
+        return this.methods.get(description);
     }
 
-    private Set<AstMethod> usages(MethodDescription attribute) {
-        final Set<AstMethod> result = new HashSet<>();
-        for (Map.Entry<AstMethod, Set<MethodDescription>> entry : this.indexedMethods.entrySet()) {
-            for (MethodDescription method : entry.getValue()) {
-                if (method.equals(attribute)) {
-                    result.add(entry.getKey());
-                    break;
-                }
-            }
-        }
-        return result;
+    public Set<Pair<AstMethod, DaikonMethod>> getMethods() {
+        return new HashSet<>(this.methods.values());
     }
 
-    public Pair<AstMethod, Set<AstMethod>> associate(MethodDescription method) throws NotFoundException {
-        AstMethod astMethod = Sets.getElement(this.indexedMethods.keySet(), method);
-        return new Pair<>(astMethod, this.usages(astMethod.getDescription()));
+    private Set<MethodDescription> usages(MethodDescription description) {
+        return this.indexedMethods.get(description);
+    }
+
+    public Pair<Pair<AstMethod, DaikonMethod>, Set<Pair<AstMethod, DaikonMethod>>> associate(MethodDescription description) throws NotFoundException {
+        if (!this.methods.containsKey(description)) return null;
+        final Pair<AstMethod, DaikonMethod> pair = this.methods.get(description);
+        final Set<Pair<AstMethod, DaikonMethod>> usages = this.usages(description).stream().map(this::getMethod).collect(Collectors.toSet());
+        return new Pair<>(pair, usages);
     }
 
     private static Set<String> loadJava(String passToFolder) {
@@ -94,7 +91,9 @@ public class Searcher {
         final Searcher self = new Searcher();
         final Set<AstMethod> astMethods = Searcher.indexJavaCodes(javaCodes, new SimpleAstVisitor());
         for (AstMethod method : astMethods) {
-            self.indexedMethods.put(method, new HashSet<>());
+            final MethodDescription description = method.getDescription();
+            self.indexedMethods.put(description, new HashSet<>());
+            self.methods.put(description, new Pair<>(method, null));
         }
         return self;
     }
@@ -104,12 +103,20 @@ public class Searcher {
         final Map<MethodDescription, Set<MethodDescription>> byteMethods = Searcher.indexByteCodes(byteCodes, new AsmClassAnalyser());
         final Set<AstMethod> astMethods = Searcher.indexJavaCodes(javaCodes, new AstVisitor());
         for (AstMethod method : astMethods) {
-            if (byteMethods.containsKey(method.getDescription())) {
-                self.indexedMethods.put(method, byteMethods.get(method.getDescription()));
-            } else {
-                self.indexedMethods.put(method, new HashSet<>());
-            }
+            final MethodDescription description = method.getDescription();
+            final Set<MethodDescription> usages = new HashSet<>();
+            if (byteMethods.containsKey(method.getDescription())) usages.addAll(byteMethods.get(method.getDescription()));
+            self.indexedMethods.put(description, usages);
+            self.methods.put(description, new Pair<>(method, null));
         }
         return self;
+    }
+
+    public void update(Set<DaikonMethod> methods) {
+        for (DaikonMethod daikonMethod : methods) {
+            final MethodDescription description = daikonMethod.getDescription();
+            final AstMethod astMethod = this.methods.containsKey(description) ? this.methods.get(description).getValue0() : null;
+            this.methods.put(description, new Pair<>(astMethod, daikonMethod));
+        }
     }
 }
