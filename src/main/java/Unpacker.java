@@ -1,14 +1,14 @@
-import analysers.DaikonMethod;
-import analysers.MethodDescription;
 import analysers.Parser;
+import analysers.analysable.AsmClass;
+import analysers.analysable.AsmType;
+import analysers.analysable.DaikonMethod;
+import analysers.analysable.MethodDescription;
+import org.javatuples.Pair;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,7 +22,17 @@ public final class Unpacker {
 
     }
 
-    public static Set<DaikonMethod> unpack(String pathToDtrace) throws IOException {
+    public static Set<DaikonMethod> unpackNormal(String pathToDtrace) throws IOException {
+        return Unpacker.unpack(pathToDtrace, false);
+
+    }
+
+    public static Set<DaikonMethod> unpackSimple(String pathToDtrace) throws IOException {
+        return Unpacker.unpack(pathToDtrace, true);
+    }
+
+
+    private static Set<DaikonMethod> unpack(String pathToDtrace, boolean simple) throws IOException {
         final Map<MethodDescription, DaikonMethod> methods = new HashMap<>();
         State state = State.INIT;
         try (BufferedReader reader = new BufferedReader(new FileReader(pathToDtrace))) {
@@ -40,7 +50,14 @@ public final class Unpacker {
                         state = State.INIT;
                         continue;
                     }
-                    final MethodDescription description = Parser.parseDaikonMethodDescription(pair[0]);
+                    MethodDescription description = Parser.parseDaikonMethodDescription(pair[0], simple);
+                    if (simple) {
+                        final String name = description.getName();
+                        final AsmClass owner = new AsmClass(null, null, description.getOwner().getName());
+                        final AsmType type = description.getType();
+                        final List<Pair<AsmType, String>> parameters = description.getParameters();
+                        description = new MethodDescription(name, owner, type, parameters);
+                    }
                     method = new DaikonMethod(description);
                     if (!methods.containsKey(description)) {
                         methods.put(description, method);

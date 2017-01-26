@@ -1,13 +1,8 @@
-package analysers.java;
+package analysers;
 
-import analysers.AstMethod;
-import analysers.MethodDescription;
-import analysers.MethodParts;
-import analysers.Parser;
-import analysers.bytecode.AsmClass;
-import analysers.bytecode.AsmPrimitiveType;
-import analysers.bytecode.AsmType;
+import analysers.analysable.*;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.comments.JavadocComment;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
@@ -15,9 +10,7 @@ import javassist.NotFoundException;
 import org.javatuples.Pair;
 import utils.Sets;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public abstract class AbstractVisitor extends VoidVisitorAdapter<Object> {
@@ -25,19 +18,34 @@ public abstract class AbstractVisitor extends VoidVisitorAdapter<Object> {
     private Set<AstMethod> methods = new HashSet<>();
 
     @Override
-    public void visit(MethodDeclaration declaration, Object arg) {
+    public void visit(ConstructorDeclaration declaration, Object arg) {
         final JavadocComment doc = declaration.getJavaDoc();
-        final Pair<String, List<String>> pair = getFullClassName(declaration);
-        final String ownerFullName = "L" + (pair.getValue0().length() > 0 ? pair.getValue0() + "." : "") + String.join("$", pair.getValue1()) + ";";
-        final AsmClass owner = Parser.parseClass(ownerFullName);
+        final Pair<String, List<String>> pair = this.getFullClassName(declaration);
+        final AsmClass owner = new AsmClass(new ArrayList<>(Arrays.asList(pair.getValue0().split("."))), pair.getValue1());
         final String name = declaration.getName();
         final List<Pair<AsmType, String>> parameters = declaration.getParameters().stream()
                 .map(parameter -> new Pair<>(Parser.parseType(this.getTypeString(parameter.getType().toString())), parameter.getName()))
                 .collect(Collectors.toList());
-        final AsmType type = Parser.parseType(getTypeString(declaration.getType().toString()));
+        final AsmType type = new AsmPrimitiveType("void");
+        final String body = declaration.getBlock() == null ? "" : declaration.getBlock().toString();
+        final MethodDescription description = new MethodDescription(name, owner, type, parameters);
+        this.methods.add(new AstMethod(description, doc, body));
+        super.visit(declaration, arg);
+    }
+
+    @Override
+    public void visit(MethodDeclaration declaration, Object arg) {
+        final JavadocComment doc = declaration.getJavaDoc();
+        final Pair<String, List<String>> pair = this.getFullClassName(declaration);
+        final AsmClass owner = new AsmClass(new ArrayList<>(Arrays.asList(pair.getValue0().split("."))), pair.getValue1());
+        final String name = declaration.getName();
+        final List<Pair<AsmType, String>> parameters = declaration.getParameters().stream()
+                .map(parameter -> new Pair<>(Parser.parseType(this.getTypeString(parameter.getType().toString())), parameter.getName()))
+                .collect(Collectors.toList());
+        final AsmType type = Parser.parseType(this.getTypeString(declaration.getType().toString()));
         final String body = declaration.getBody() == null ? "" : declaration.getBody().toString();
-        final MethodDescription method = new MethodDescription(name, owner, type, parameters);
-        this.methods.add(new AstMethod(method, new MethodParts(doc, body)));
+        final MethodDescription description = new MethodDescription(name, owner, type, parameters);
+        this.methods.add(new AstMethod(description, doc, body));
         super.visit(declaration, arg);
     }
 

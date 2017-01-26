@@ -1,12 +1,14 @@
-package analysers;
+package analysers.analysable;
 
+
+import utils.Shell;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class DaikonMethod {
+public class DaikonMethod extends Shell<MethodDescription> {
 
 
     final private MethodDescription description;
@@ -18,17 +20,12 @@ public class DaikonMethod {
         this.description = description;
     }
 
-    @Override
-    public String toString() {
-        return String.format(
-                "DaikonMethod{description=%s, enter=%s, exit=%s, exits=%s}",
-                description.toString(),
-                enter.toString(),
-                exit.toString(),
-                exits.toString());
-    }
-
     public MethodDescription getDescription() {
         return description;
+    }
+
+    @Override
+    public MethodDescription inner() {
+        return this.description;
     }
 }

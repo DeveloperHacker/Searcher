@@ -1,9 +1,8 @@
 package analysers;
 
-import analysers.bytecode.AsmClassAnalyser;
-import analysers.java.AbstractVisitor;
-import analysers.java.AstVisitor;
-import analysers.java.SimpleAstVisitor;
+import analysers.analysable.AstMethod;
+import analysers.analysable.DaikonMethod;
+import analysers.analysable.MethodDescription;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.CompilationUnit;
@@ -53,11 +52,7 @@ public class Searcher {
         scanner.setCaseSensitive(false);
         scanner.scan();
         final String[] codes = scanner.getIncludedFiles();
-        return Arrays.stream(codes).map(code -> passToFolder + code).collect(Collectors.toSet());
-    }
-
-    public static Searcher simple(String passToFolder) throws FileNotFoundException {
-        return simple(loadJava(passToFolder));
+        return Arrays.stream(codes).map(code -> passToFolder + "/" + code).collect(Collectors.toSet());
     }
 
     private static Map<MethodDescription, Set<MethodDescription>> indexByteCodes(Set<String> byteCodes, AsmClassAnalyser analyser) throws IOException {
@@ -72,22 +67,21 @@ public class Searcher {
         return analyser.getMethods();
     }
 
-    private static Set<AstMethod> indexJavaCodes(Set<String> javaCodes, AbstractVisitor visitor) throws FileNotFoundException {
+    private static Set<AstMethod> indexJavaCodes(Set<String> javaCodes, AbstractVisitor visitor) throws FileNotFoundException, ParseException {
         for (String code : javaCodes) {
-            try {
-                System.out.println(code);
-                final FileInputStream in = new FileInputStream(code);
-                final CompilationUnit ast = JavaParser.parse(in);
-                visitor.visit(ast, null);
-            } catch (ParseException | Parser.ParseException ex) {
-                ex.printStackTrace();
-                throw new RuntimeException();
-            }
+            System.out.println(code);
+            final FileInputStream in = new FileInputStream(code);
+            final CompilationUnit ast = JavaParser.parse(in);
+            visitor.visit(ast, null);
         }
         return visitor.getMethods();
     }
 
-    private static Searcher simple(Set<String> javaCodes) throws FileNotFoundException {
+    public static Searcher simple(String passToFolder) throws FileNotFoundException, ParseException {
+        return simple(loadJava(passToFolder));
+    }
+
+    private static Searcher simple(Set<String> javaCodes) throws FileNotFoundException, ParseException {
         final Searcher self = new Searcher();
         final Set<AstMethod> astMethods = Searcher.indexJavaCodes(javaCodes, new SimpleAstVisitor());
         for (AstMethod method : astMethods) {
@@ -98,7 +92,7 @@ public class Searcher {
         return self;
     }
 
-    public static Searcher normal(Set<String> javaCodes, Set<String> byteCodes) throws IOException {
+    public static Searcher normal(Set<String> javaCodes, Set<String> byteCodes) throws IOException, ParseException {
         final Searcher self = new Searcher();
         final Map<MethodDescription, Set<MethodDescription>> byteMethods = Searcher.indexByteCodes(byteCodes, new AsmClassAnalyser());
         final Set<AstMethod> astMethods = Searcher.indexJavaCodes(javaCodes, new AstVisitor());

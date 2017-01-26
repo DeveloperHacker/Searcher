@@ -1,7 +1,7 @@
-import analysers.AstMethod;
-import analysers.DaikonMethod;
-import analysers.MethodDescription;
-import analysers.bytecode.AsmType;
+import analysers.analysable.AstMethod;
+import analysers.analysable.DaikonMethod;
+import analysers.analysable.MethodDescription;
+import analysers.analysable.AsmType;
 import com.github.javaparser.ast.comments.JavadocComment;
 import org.javatuples.Pair;
 

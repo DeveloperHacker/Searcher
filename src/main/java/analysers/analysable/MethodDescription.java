@@ -1,7 +1,5 @@
-package analysers;
+package analysers.analysable;
 
-import analysers.bytecode.AsmClass;
-import analysers.bytecode.AsmType;
 import org.javatuples.Pair;
 
 import java.util.List;
@@ -20,7 +18,9 @@ public class MethodDescription {
         this.owner = owner;
         this.type = type;
         this.parameters = parameters;
-        final String params = parameters.stream().map(pair -> pair.getValue0().toString() + pair.getValue1()).collect(Collectors.joining(""));
+        final String params = parameters.stream()
+                .map(pair -> pair.getValue0().toString() + " " + pair.getValue1())
+                .collect(Collectors.joining(", "));
         this.description = String.format("%s%s(%s)%s", owner.toString(), name, params, type.toString());
     }
 
@@ -40,21 +40,23 @@ public class MethodDescription {
         return parameters;
     }
 
-    public String getDescription() {
-        return this.description;
-    }
-
     @Override
     public String toString() {
-        return this.getDescription();
+        return this.description;
     }
 
     @Override
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (owner != null ? owner.hashCode() : 0);
-        result = 31 * result + (type != null ? type.hashCode() : 0);
-        result = 31 * result + (parameters != null ? parameters.hashCode() : 0);
+        if (parameters != null) {
+            int hashParameters = 0;
+            for (Pair<AsmType, String> pair : this.parameters) {
+                final AsmType type = pair.getValue0();
+                hashParameters = 31 * hashParameters + (type != null ? type.hashCode() : 0);
+            }
+            result = 31 * result + hashParameters;
+        }
         return result;
     }
 
@@ -62,7 +64,13 @@ public class MethodDescription {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof MethodDescription)) return false;
-        MethodDescription method = (MethodDescription) o;
-        return description.equals(method.description);
+        final MethodDescription method = (MethodDescription) o;
+        boolean paramsEq = this.parameters.size() == method.parameters.size();
+        if (paramsEq) {
+            for (int i = 0; i < this.parameters.size(); ++i) {
+                paramsEq &= this.parameters.get(i).getValue0().equals(method.parameters.get(i).getValue0());
+            }
+        }
+        return this.name.equals(method.name) && this.owner.equals(method.owner) && paramsEq;
     }
 }

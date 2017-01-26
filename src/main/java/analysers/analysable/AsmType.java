@@ -1,4 +1,4 @@
-package analysers.bytecode;
+package analysers.analysable;
 
 public abstract class AsmType {
 

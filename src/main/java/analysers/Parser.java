@@ -1,9 +1,6 @@
 package analysers;
 
-import analysers.bytecode.AsmArray;
-import analysers.bytecode.AsmClass;
-import analysers.bytecode.AsmPrimitiveType;
-import analysers.bytecode.AsmType;
+import analysers.analysable.*;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
@@ -199,15 +196,16 @@ public class Parser {
         return new MethodDescription(name, owner, type, parameters);
     }
 
-    public static MethodDescription parseDaikonMethodDescription(String daikonMethodDescription) {
+    public static MethodDescription parseDaikonMethodDescription(String daikonMethodDescription, boolean simple) {
         daikonMethodDescription = daikonMethodDescription.replace(" ", "");
         final Pattern pattern = Pattern.compile("(([\\w<>]+\\.)*)([\\w<>]+)\\(([\\w.<>,(\\[\\])]*)\\)");
         final Matcher matcher = pattern.matcher(daikonMethodDescription);
         if (!matcher.find())
             throw new ParseException("Daikon method description have wrong format", daikonMethodDescription);
-        final String ownerFullName = String.format("L%s;", matcher.group(1).substring(0, matcher.group(1).length() - 1));
+        final String group = simple ? matcher.group(2) : matcher.group(1);
+        final String ownerFullName = String.format("L%s;", group.substring(0, group.length() - 1));
         final AsmClass owner = Parser.parseClass(ownerFullName);
-        final String name = matcher.group(3).equals(owner.getName()) ? "<init>" : matcher.group(3);
+        final String name = matcher.group(3);
         final List<String> arguments = new ArrayList<>();
         final PrimitiveIterator.OfInt it = matcher.group(4).chars().iterator();
         StringBuilder token = new StringBuilder();
@@ -231,6 +229,14 @@ public class Parser {
             arguments.add(token.toString());
         }
         final List<Pair<AsmType, String>> parameters = arguments.stream()
+                .map(type -> {
+                    if (simple) {
+                        final String[] typeArr = type.split("[\\.\\$]");
+                        return typeArr[typeArr.length - 1];
+                    } else {
+                        return type;
+                    }
+                })
                 .map(type -> AsmPrimitiveType.isPrimitive(type) ? type : String.format("L%s;", type))
                 .map(Parser::parseType)
                 .map(t -> new Pair<>(t, ""))

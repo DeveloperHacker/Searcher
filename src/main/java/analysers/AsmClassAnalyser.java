@@ -1,7 +1,7 @@
-package analysers.bytecode;
+package analysers;
 
-import analysers.MethodDescription;
-import analysers.Parser;
+import analysers.analysable.AsmClass;
+import analysers.analysable.MethodDescription;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 

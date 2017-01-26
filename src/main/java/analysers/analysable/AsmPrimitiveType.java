@@ -1,4 +1,4 @@
-package analysers.bytecode;
+package analysers.analysable;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;

@@ -1,7 +1,6 @@
-package analysers.bytecode;
+package analysers;
 
-import analysers.MethodDescription;
-import analysers.Parser;
+import analysers.analysable.MethodDescription;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.function.Consumer;

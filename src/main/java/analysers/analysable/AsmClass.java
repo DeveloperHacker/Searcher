@@ -1,4 +1,4 @@
-package analysers.bytecode;
+package analysers.analysable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,10 +8,10 @@ public class AsmClass extends AsmType {
 
     private final String pkg;
     private final AsmClass owner;
-    private Supplier<String> name;
+    private Supplier<String> fullName;
 
     /**
-     * Full name of class should parse to two parts (path and names).
+     * Full fullName of class should parse to two parts (path and names).
      * For example, exist:
      *  full_name = "main/printers/analysers.Parser$A$B"
      * it should parse to:
@@ -23,7 +23,7 @@ public class AsmClass extends AsmType {
      */
     public AsmClass(List<String> path, List<String> names) {
         this(
-            String.join(".", path),
+            path.size() == 0 ? null : String.join(".", path),
             names.size() == 1 ? null : new AsmClass(path, new ArrayList<>(names.subList(0, names.size() - 1))),
             names.get(names.size() - 1)
         );
@@ -31,17 +31,17 @@ public class AsmClass extends AsmType {
 
     public AsmClass(String pkg, AsmClass owner, String name) {
         super(name);
-        this.pkg = pkg;
+        this.pkg = (pkg == null || pkg.length() == 0) ? null : pkg;
         this.owner = owner;
-        this.name = () -> {
+        this.fullName = () -> {
             String val;
             if (owner == null) {
-                val = "L" + (pkg.length() > 0 ? pkg + "." : "") + name + ";";
+                val = "L" + (pkg == null || pkg.length() == 0 ? "" : pkg + ".") + name + ";";
             } else {
                 String ownerName = owner.getFullName();
                 val = ownerName.substring(0, ownerName.length() - 1) + "$" + name + ";";
             }
-            this.name = () -> val;
+            this.fullName = () -> val;
             return val;
         };
     }
@@ -61,10 +61,10 @@ public class AsmClass extends AsmType {
     }
 
     /**
-     * @return the full name of this class, not null
+     * @return the full fullName of this class, not null
      */
     public String getFullName() {
-        return this.name.get();
+        return this.fullName.get();
     }
 
     @Override
@@ -83,8 +83,8 @@ public class AsmClass extends AsmType {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof AsmClass)) return false;
-        AsmClass aAsmClass = (AsmClass) o;
-        if (pkg != null ? !pkg.equals(aAsmClass.pkg) : aAsmClass.pkg != null) return false;
-        return owner != null ? owner.equals(aAsmClass.owner) : aAsmClass.owner == null;
+        if (!super.equals(o)) return false;
+        AsmClass asmClass = (AsmClass) o;
+        return (pkg != null ? pkg.equals(asmClass.pkg) : asmClass.pkg == null) && (owner != null ? owner.equals(asmClass.owner) : asmClass.owner == null);
     }
 }
