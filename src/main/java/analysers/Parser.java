@@ -244,7 +244,7 @@ public class Parser {
         return new MethodDescription(name, owner, new AsmPrimitiveType("void"), parameters);
     }
 
-    static class ParseException extends IllegalArgumentException {
+    public static class ParseException extends IllegalArgumentException {
 
         final String message;
         final String parsable;

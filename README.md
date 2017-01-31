@@ -1,1 +1,1 @@
-# searcher
+# miner

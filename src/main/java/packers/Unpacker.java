@@ -1,3 +1,5 @@
+package packers;
+
 import analysers.Parser;
 import analysers.analysable.AsmClass;
 import analysers.analysable.AsmType;

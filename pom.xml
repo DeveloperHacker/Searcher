@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.jetbrains.research.lab.digitek</groupId>
-    <artifactId>searcher</artifactId>
+    <artifactId>miner</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -31,7 +31,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <finalName>searcher</finalName>
+                    <finalName>miner</finalName>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
