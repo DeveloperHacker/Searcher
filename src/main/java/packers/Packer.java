@@ -42,7 +42,7 @@ public final class Packer {
     private static final String exitIdTagName = "exitId";
     private static final String exitIdsTagName = "exitIds";
 
-    public static void packMethods(String fileName, Collection<Pair<AstMethod, DaikonMethod>> methods) throws IOException, XMLStreamException {
+    public static void pack(final String fileName, final Collection<Pair<AstMethod, DaikonMethod>> methods) throws IOException, XMLStreamException {
         final XMLOutputFactory output = XMLOutputFactory.newInstance();
         final XMLStreamWriter writer = output.createXMLStreamWriter(new FileWriter(fileName));
         writer.writeStartDocument();

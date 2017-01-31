@@ -10,9 +10,10 @@ import javassist.NotFoundException;
 import org.apache.maven.shared.utils.io.DirectoryScanner;
 import org.javatuples.Pair;
 import org.objectweb.asm.ClassReader;
-import packers.Unpacker;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,8 +30,8 @@ public class Miner {
         return this.methods.get(description);
     }
 
-    public Set<Pair<AstMethod, DaikonMethod>> getMethods() {
-        return new HashSet<>(this.methods.values());
+    public Collection<Pair<AstMethod, DaikonMethod>> getMethods() {
+        return this.methods.values();
     }
 
     private Set<MethodDescription> usages(MethodDescription description) {
@@ -96,7 +97,7 @@ public class Miner {
         return self;
     }
 
-    public void update(Set<DaikonMethod> methods) {
+    public void update(Collection<DaikonMethod> methods) {
         for (DaikonMethod daikonMethod : methods) {
             final MethodDescription description = daikonMethod.getDescription();
             final AstMethod astMethod = this.methods.containsKey(description) ? this.methods.get(description).getValue0() : null;
@@ -104,104 +105,25 @@ public class Miner {
         }
     }
 
-    private static void execute(
-            final List<String> commands,
-            final String path,
-            final String input,
-            final String output
-    ) throws IOException, InterruptedException {
-        final File script = File.createTempFile("script", null);
-        final Writer streamWriter = new OutputStreamWriter(new FileOutputStream(script));
-        final PrintWriter writer = new PrintWriter(streamWriter);
-        for (String command : commands) writer.println(command);
-        writer.close();
-        final ProcessBuilder process = new ProcessBuilder("bash", script.toString());
-        process.inheritIO();
-        if (input != null) process.redirectInput(new File(input));
-        if (output != null) process.redirectOutput(new File(output));
-        if (path != null) process.directory(new File(path));
-        process.start().waitFor();
+    public static Collection<AstMethod> mine(String dir) throws FileNotFoundException, ParseException {
+        final Set<String> javaCodes = Miner.loadJava(dir);
+        final Miner miner = Miner.simple(javaCodes);
+        return miner.methods.values().stream().map(Pair::getValue0).collect(Collectors.toList());
     }
 
-    public enum Type {
-        PROJECT, MAVEN, JAR
-    }
-
-    public static List<Pair<AstMethod, DaikonMethod>> mine(
-            final String daikon,
-            final Map<String, Pair<Type, Set<String>>> projects
-    ) throws IOException, InterruptedException, com.github.javaparser.ParseException {
-        final List<Pair<AstMethod, DaikonMethod>> methods = new LinkedList<>();
-        for (Map.Entry<String, Pair<Type, Set<String>>> project : projects.entrySet()) {
-            System.out.println(String.format("[%s] %s", project.getValue().getValue0().toString(), project.getKey()));
-            final String jar;
-            final String path;
-            final Type type = project.getValue().getValue0();
-            final List<String> makeCommands = new ArrayList<>();
-            makeCommands.add("#!/usr/bin/env bash");
-            switch (type) {
-                case PROJECT:
-                    jar = null;
-                    path = project.getKey();
-                    makeCommands.add("shopt -s globstar");
-                    makeCommands.add("javac -cp .:$LIBS **/*.java");
-                    execute(makeCommands, path, null, null);
-                    break;
-                case MAVEN:
-                    path = project.getKey();
-                    makeCommands.add("mvn package");
-                    execute(makeCommands, path, null, null);
-                    final DirectoryScanner scanner = new DirectoryScanner();
-                    scanner.setIncludes("*.jar");
-                    scanner.setBasedir(path + "/target");
-                    scanner.setCaseSensitive(false);
-                    scanner.scan();
-                    final String[] jars = scanner.getIncludedFiles();
-                    jar = Arrays.stream(jars)
-                            .map(name -> path + "/target/" + name)
-                            .reduce((acc, name) -> acc + ":" + name)
-                            .orElse("");
-                    break;
-                case JAR:
-                    jar = project.getKey();
-                    final String[] pathArr = project.getKey().split("/");
-                    path = String.join("/", Arrays.copyOfRange(pathArr, 0, pathArr.length - 1));
-                    break;
-                default:
-                    path = null;
-                    jar = null;
-            }
-            final Set<String> mainClasses = project.getValue().getValue1();
-            final Set<String> javaCodes = Miner.loadJava(path);
-            final Miner miner = Miner.simple(javaCodes);
-            for (String mainClass : mainClasses) {
-                final String className = Parser.parseClass(String.format("L%s;", mainClass)).getName();
-                final String dtrace = path + "/" + className + ".dtrace";
-                final List<String> dyncompCommands = new ArrayList<>();
-                final List<String> chicoryCommand = new ArrayList<>();
-                dyncompCommands.add("#!/usr/bin/env bash");
-                dyncompCommands.add("export DAIKONDIR=" + daikon);
-                chicoryCommand.add("#!/usr/bin/env bash");
-                chicoryCommand.add("export DAIKONDIR=" + daikon);
-                switch (type) {
-                    case PROJECT:
-                        dyncompCommands.add("java -cp .:" + daikon + "/daikon.jar daikon.DynComp --no-cset-file " + mainClass);
-                        chicoryCommand.add("java -cp .:" + daikon + "/daikon.jar daikon.Chicory --daikon --comparability-file=" + className + ".decls-DynComp " + mainClass);
-                        break;
-                    case MAVEN:
-                    case JAR:
-                        dyncompCommands.add("java -cp " + jar + ":" + daikon + "/daikon.jar daikon.DynComp --no-cset-file " + mainClass);
-                        chicoryCommand.add("java -cp " + jar + ":" + daikon + "/daikon.jar daikon.Chicory --daikon --comparability-file=" + className + ".decls-DynComp " + mainClass);
-                        break;
-                }
-                System.out.println(dyncompCommands);
-                execute(dyncompCommands, path, null, null);
-                execute(chicoryCommand, path, null, dtrace);
-                miner.update(Unpacker.unpackSimple(dtrace));
-                methods.addAll(miner.getMethods());
-            }
-            System.out.println();
+    public static Collection<Pair<AstMethod, DaikonMethod>> associate(
+            final Collection<AstMethod> astMethods,
+            final Collection<DaikonMethod> daikonMethods
+    ) {
+        final Map<MethodDescription, Pair<AstMethod, DaikonMethod>> methods = new HashMap<>();
+        for (AstMethod astMethod : astMethods) {
+            methods.put(astMethod.getDescription(), new Pair<>(astMethod, null));
         }
-        return methods;
+        for (DaikonMethod daikonMethod : daikonMethods) {
+            final MethodDescription description = daikonMethod.getDescription();
+            final AstMethod astMethod = methods.containsKey(description) ? methods.get(description).getValue0() : null;
+            methods.put(description, new Pair<>(astMethod, daikonMethod));
+        }
+        return methods.values();
     }
 }

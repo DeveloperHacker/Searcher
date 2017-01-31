@@ -24,17 +24,16 @@ public final class Unpacker {
 
     }
 
-    public static Set<DaikonMethod> unpackNormal(String pathToDtrace) throws IOException {
+    public static Collection<DaikonMethod> unpackNormal(String pathToDtrace) throws IOException {
         return Unpacker.unpack(pathToDtrace, false);
 
     }
 
-    public static Set<DaikonMethod> unpackSimple(String pathToDtrace) throws IOException {
+    public static Collection<DaikonMethod> unpackSimple(String pathToDtrace) throws IOException {
         return Unpacker.unpack(pathToDtrace, true);
     }
 
-
-    private static Set<DaikonMethod> unpack(String pathToDtrace, boolean simple) throws IOException {
+    private static Collection<DaikonMethod> unpack(String pathToDtrace, boolean simple) throws IOException {
         final Map<MethodDescription, DaikonMethod> methods = new HashMap<>();
         State state = State.INIT;
         try (BufferedReader reader = new BufferedReader(new FileReader(pathToDtrace))) {
@@ -91,7 +90,7 @@ public final class Unpacker {
                 }
             }
         }
-        return new HashSet<>(methods.values());
+        return methods.values();
     }
 
     private enum State {
