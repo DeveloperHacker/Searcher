@@ -60,20 +60,21 @@ public final class Packer {
                     final List<String> tokens = Arrays.stream(doc.getContent().split("(\n(\\s|\t)*/?\\*|\t|\\s)+"))
                             .filter(token -> token.length() > 0)
                             .collect(Collectors.toList());
-                    if (tokens.size() == 0 || tokens.get(0).length() == 0) continue;
-                    writer.writeStartElement(javaDocTagName);
-                    writer.writeStartElement(Packer.getTag(tokens.get(0)));
-                    writer.writeCharacters(tokens.get(0) + " ");
-                    for (String token : tokens.subList(1, tokens.size())) {
-                        String tag = Packer.getTag(token);
-                        if (!tag.equals(headTagName)) {
-                            writer.writeEndElement();
-                            writer.writeStartElement(tag);
+                    if (tokens.size() != 0 && tokens.get(0).length() != 0) {
+                        writer.writeStartElement(javaDocTagName);
+                        writer.writeStartElement(Packer.getTag(tokens.get(0)));
+                        writer.writeCharacters(tokens.get(0) + " ");
+                        for (String token : tokens.subList(1, tokens.size())) {
+                            String tag = Packer.getTag(token);
+                            if (!tag.equals(headTagName)) {
+                                writer.writeEndElement();
+                                writer.writeStartElement(tag);
+                            }
+                            writer.writeCharacters(token + " ");
                         }
-                        writer.writeCharacters(token + " ");
+                        writer.writeEndElement();
+                        writer.writeEndElement();
                     }
-                    writer.writeEndElement();
-                    writer.writeEndElement();
                 }
             }
 
