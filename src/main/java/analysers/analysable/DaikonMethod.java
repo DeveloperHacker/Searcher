@@ -17,15 +17,11 @@ public class DaikonMethod extends Shell<MethodDescription> {
     final public Map<Integer, Set<String>> exits = new HashMap<>();
 
     public DaikonMethod(MethodDescription description) {
+        super(description);
         this.description = description;
     }
 
     public MethodDescription getDescription() {
         return description;
-    }
-
-    @Override
-    public MethodDescription inner() {
-        return this.description;
     }
 }

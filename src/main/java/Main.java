@@ -13,20 +13,20 @@ import java.util.*;
 
 public class Main {
 
-    public static void main(final String args[]) {
-        try {
+    public static void main(final String args[]) throws IOException, ParseException, XMLStreamException {
+//        try {
             final String pwd = System.getProperty("user.dir");
             final Map<String, String> arguments = Main.arguments(args);
-            final String dir = arguments.containsKey("--dir") ? arguments.get("--dir") : pwd;
-            final String dtrace = arguments.containsKey("--dtrace") ? arguments.get("--dtrace") : null;
-            final String xml = arguments.containsKey("--xml") ? arguments.get("--xml") : pwd + "methods.xml";
+            final String dir = arguments.getOrDefault("--dir", pwd);
+            final String dtrace = arguments.getOrDefault("--dtrace", null);
+            final String xml = arguments.getOrDefault("--xml", pwd + "methods.xml");
             final Collection<AstMethod> astMethods = Miner.mine(dir);
             final Collection<DaikonMethod> daikonMethods = dtrace == null ? Collections.emptyList(): Unpacker.unpackSimple(dtrace);
             final Collection<Pair<AstMethod, DaikonMethod>> methods = Miner.associate(astMethods, daikonMethods);
             Packer.pack(xml, methods);
-        } catch (AssertionError | IOException | XMLStreamException | ParseException e) {
-            System.out.println(e.getMessage());
-        }
+//        } catch (AssertionError | IOException | XMLStreamException | ParseException e) {
+//            System.out.println(e.getMessage());
+//        }
     }
 
     private static Map<String, String> arguments(final String[] args) {
@@ -39,5 +39,4 @@ public class Main {
         }
         return result;
     }
-
 }

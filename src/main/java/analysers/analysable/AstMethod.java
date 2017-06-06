@@ -11,6 +11,7 @@ public class AstMethod extends Shell<MethodDescription> {
 
 
     public AstMethod(MethodDescription description, JavadocComment javadocComment, String body) {
+        super(description);
         this.description = description;
         this.javadocComment = javadocComment;
         this.body = body;
@@ -19,11 +20,12 @@ public class AstMethod extends Shell<MethodDescription> {
     public MethodDescription getDescription() {
         return this.description;
     }
+
     public JavadocComment getJavadocComment() {
         return javadocComment;
     }
 
-    public String getBody() {
+    private String getBody() {
         return body;
     }
 
@@ -31,10 +33,5 @@ public class AstMethod extends Shell<MethodDescription> {
     public String toString() {
         final JavadocComment doc = this.javadocComment;
         return "\t/**" + (doc == null ? "" : doc.getContent()) + "*/\n" + this.description.toString() + " " + getBody();
-    }
-
-    @Override
-    public MethodDescription inner() {
-        return this.description;
     }
 }

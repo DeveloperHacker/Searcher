@@ -2,7 +2,15 @@ package utils;
 
 public abstract class Shell<E> {
 
-    abstract public E inner();
+    private final E inner;
+
+    public Shell(final E inner) {
+        this.inner = inner;
+    }
+
+    E inner() {
+        return this.inner;
+    }
 
     @Override
     public int hashCode() {

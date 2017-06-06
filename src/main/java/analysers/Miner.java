@@ -26,7 +26,7 @@ public class Miner {
 
     }
 
-    public Pair<AstMethod, DaikonMethod> getMethod(MethodDescription description) {
+    private Pair<AstMethod, DaikonMethod> getMethod(MethodDescription description) {
         return this.methods.get(description);
     }
 
@@ -45,7 +45,7 @@ public class Miner {
         return new Pair<>(pair, usages);
     }
 
-    public static Set<String> loadJava(String passToFolder) {
+    private static Set<String> loadJava(String passToFolder) {
         final DirectoryScanner scanner = new DirectoryScanner();
         scanner.setIncludes("**/*.java");
         scanner.setBasedir(passToFolder);
@@ -57,7 +57,7 @@ public class Miner {
 
     private static Map<MethodDescription, Set<MethodDescription>> indexByteCodes(Set<String> byteCodes, AsmClassAnalyser analyser) throws IOException {
         for (String code : byteCodes) {
-            final ClassReader reader  = new ClassReader(code);
+            final ClassReader reader = new ClassReader(code);
             reader.accept(analyser, 0);
         }
         return analyser.getMethods();
@@ -65,6 +65,7 @@ public class Miner {
 
     private static Set<AstMethod> indexJavaCodes(Set<String> javaCodes, AbstractVisitor visitor) throws FileNotFoundException, ParseException {
         for (String code : javaCodes) {
+            System.out.println(code);
             final FileInputStream in = new FileInputStream(code);
             final CompilationUnit ast = JavaParser.parse(in);
             visitor.visit(ast, null);
@@ -72,7 +73,7 @@ public class Miner {
         return visitor.getMethods();
     }
 
-    public static Miner simple(Set<String> javaCodes) throws FileNotFoundException, ParseException {
+    private static Miner simple(Set<String> javaCodes) throws FileNotFoundException, ParseException {
         final Miner self = new Miner();
         final Set<AstMethod> astMethods = Miner.indexJavaCodes(javaCodes, new SimpleAstVisitor());
         for (AstMethod method : astMethods) {
@@ -90,7 +91,8 @@ public class Miner {
         for (AstMethod method : astMethods) {
             final MethodDescription description = method.getDescription();
             final Set<MethodDescription> usages = new HashSet<>();
-            if (byteMethods.containsKey(method.getDescription())) usages.addAll(byteMethods.get(method.getDescription()));
+            if (byteMethods.containsKey(method.getDescription()))
+                usages.addAll(byteMethods.get(method.getDescription()));
             self.indexedMethods.put(description, usages);
             self.methods.put(description, new Pair<>(method, null));
         }
