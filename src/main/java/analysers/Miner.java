@@ -45,14 +45,14 @@ public class Miner {
         return new Pair<>(pair, usages);
     }
 
-    private static Set<String> loadJava(String passToFolder) {
+    private static Set<String> loadJava(String path) {
         final DirectoryScanner scanner = new DirectoryScanner();
         scanner.setIncludes("**/*.java");
-        scanner.setBasedir(passToFolder);
+        scanner.setBasedir(path);
         scanner.setCaseSensitive(false);
         scanner.scan();
         final String[] codes = scanner.getIncludedFiles();
-        return Arrays.stream(codes).map(code -> passToFolder + "/" + code).collect(Collectors.toSet());
+        return Arrays.stream(codes).map(code -> path + "/" + code).collect(Collectors.toSet());
     }
 
     private static Map<MethodDescription, Set<MethodDescription>> indexByteCodes(Set<String> byteCodes, AsmClassAnalyser analyser) throws IOException {
@@ -107,8 +107,8 @@ public class Miner {
         }
     }
 
-    public static Collection<AstMethod> mine(String dir) throws FileNotFoundException, ParseException {
-        final Set<String> javaCodes = Miner.loadJava(dir);
+    public static Collection<AstMethod> mine(String path) throws FileNotFoundException, ParseException {
+        final Set<String> javaCodes = Miner.loadJava(path);
         final Miner miner = Miner.simple(javaCodes);
         return miner.methods.values().stream().map(Pair::getValue0).collect(Collectors.toList());
     }

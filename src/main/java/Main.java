@@ -1,32 +1,25 @@
 import analysers.Miner;
 import analysers.analysable.AstMethod;
-import analysers.analysable.DaikonMethod;
 import com.github.javaparser.ParseException;
-import org.javatuples.Pair;
 import packers.Packer;
-import packers.Unpacker;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class Main {
 
     public static void main(final String args[]) throws IOException, ParseException, XMLStreamException {
-//        try {
-            final String pwd = System.getProperty("user.dir");
-            final Map<String, String> arguments = Main.arguments(args);
-            final String dir = arguments.getOrDefault("--dir", pwd);
-            final String dtrace = arguments.getOrDefault("--dtrace", null);
-            final String xml = arguments.getOrDefault("--xml", pwd + "methods.xml");
-            final Collection<AstMethod> astMethods = Miner.mine(dir);
-            final Collection<DaikonMethod> daikonMethods = dtrace == null ? Collections.emptyList(): Unpacker.unpackSimple(dtrace);
-            final Collection<Pair<AstMethod, DaikonMethod>> methods = Miner.associate(astMethods, daikonMethods);
-            Packer.pack(xml, methods);
-//        } catch (AssertionError | IOException | XMLStreamException | ParseException e) {
-//            System.out.println(e.getMessage());
-//        }
+        final String pwd = System.getProperty("user.dir");
+        final Map<String, String> arguments = Main.arguments(args);
+        final String input_path = arguments.getOrDefault("--input", pwd);
+        final String output_path = arguments.getOrDefault("--output", pwd + "/methods.json");
+        final Collection<AstMethod> methods = Miner.mine(input_path);
+        Packer.pack(output_path, methods);
     }
 
     private static Map<String, String> arguments(final String[] args) {
