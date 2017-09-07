@@ -100,7 +100,7 @@ public class Parser {
         return new Triplet<>(generics, parameters, type);
     }
 
-    public static List<String> parseGenerics(String generic) {
+    static List<String> parseGenerics(String generic) {
         final PrimitiveIterator.OfInt it = generic.replace(" ", "").chars().iterator();
         char ch = (char) it.nextInt();
         try {
@@ -133,7 +133,7 @@ public class Parser {
         return generics;
     }
 
-    public static AsmType parseType(String name) {
+    static AsmType parseType(String name) {
         final char first = name.charAt(0);
         if (first == 'L') {
             return Parser.parseClass(name);
@@ -141,52 +141,31 @@ public class Parser {
             return new AsmArray(Parser.parseType(name.substring(1, name.length())));
         } else if (AsmPrimitiveType.isPrimitive(name)) {
             return new AsmPrimitiveType(name);
-        } if (AsmPrimitiveType.isPrimitive(first)) {
+        }
+        if (AsmPrimitiveType.isPrimitive(first)) {
             return new AsmPrimitiveType(first);
         } else {
             throw new ParseException("Expected the target symbol in begin word", name);
         }
     }
 
-    public static AsmClass parseClass(String full_name) {
-        if (!(full_name.length() > 2 && full_name.charAt(0) == 'L' && full_name.charAt(full_name.length() - 1) == ';')) {
+    static AsmClass parseClass(final String full_name) {
+        if (!full_name.startsWith("L") || !full_name.endsWith(";"))
             throw new ParseException("Expected the symbol 'L' in begin of name and ';' in end", full_name);
-        }
-        full_name = full_name.substring(1, full_name.length() - 1);
-        final StringBuilder name = new StringBuilder();
-        final StringBuilder generics = new StringBuilder();
-        final PrimitiveIterator.OfInt it = full_name.chars().iterator();
-        int brackets = 0;
-        while (it.hasNext()) {
-            char ch = (char) it.nextInt();
-            if (ch == '>') {
-                brackets--;
-                if (brackets == 0) break;
-            }
-            if (ch == '<') {
-                brackets++;
-                if (brackets == 0) continue;
-            }
-            if (brackets == 0) {
-                name.append(ch);
-            } else {
-                generics.append(ch);
-            }
-        }
-        if (brackets > 0) throw new ParseException("Expected '>' before 'eof'", full_name);
-        if (it.hasNext()) throw new ParseException("Expected 'eof'", full_name);
-        final List<String> temp = new ArrayList<>(Arrays.asList(name.toString().replace("/", ".").split("\\.")));
-        final List<String> path = new ArrayList<>(temp.subList(0, temp.size() - 1));
-        final List<String> names = new ArrayList<>(Arrays.asList(temp.get(temp.size() - 1).split("\\$")));
-        if (names.size() == 0) throw new ParseException("Invalid full name", full_name);
+        final String name = full_name.substring(1, full_name.length() - 1).split("<")[0];
+        final List<String> temp = Arrays.asList(name.replace("/", ".").split("\\."));
+        final List<String> path = temp.subList(0, temp.size() - 1);
+        final List<String> names = Arrays.asList(temp.get(temp.size() - 1).split("\\$"));
+        if (names.size() == 0)
+            throw new ParseException("Invalid full name", full_name);
         return new AsmClass(path, names);
     }
 
-    public static MethodDescription parseMethod(String owner, String name, String desc) {
+    static MethodDescription parseMethod(String owner, String name, String desc) {
         return Parser.parseMethod(Parser.parseClass(owner), name, desc);
     }
 
-    public static MethodDescription parseMethod(AsmClass owner, String name, String desc) {
+    static MethodDescription parseMethod(AsmClass owner, String name, String desc) {
         final Pair<List<String>, String> pair = Parser.parseDescription(desc);
         final AsmType type = Parser.parseType(pair.getValue1());
         final List<Pair<AsmType, String>> parameters = pair.getValue0().stream()
@@ -216,7 +195,8 @@ public class Parser {
             if (ch == '<') brackets++;
             token.append(ch);
             if (brackets == 0 && ch == ',') {
-                if (token.length() == 0) throw new ParseException("Expected 'type name' or '>'", daikonMethodDescription);
+                if (token.length() == 0)
+                    throw new ParseException("Expected 'type name' or '>'", daikonMethodDescription);
                 arguments.add(token.toString());
                 token = new StringBuilder();
             }

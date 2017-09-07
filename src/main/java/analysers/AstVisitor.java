@@ -24,7 +24,7 @@ public class AstVisitor extends AbstractVisitor {
     public void visit(CompilationUnit compilationUnit, Object arg) {
         this.pkg = compilationUnit.getPackage() == null ? "" : compilationUnit.getPackage().getName().toString();
         this.imports = new HashMap<>();
-        for (ImportDeclaration importDeclaration: compilationUnit.getImports()) {
+        for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
             if (!importDeclaration.isStatic()) {
                 if (importDeclaration.isAsterisk()) {
                     final String pkg = importDeclaration.getName().toString();
@@ -75,7 +75,7 @@ public class AstVisitor extends AbstractVisitor {
     @Override
     protected String getTypePackage(String name) {
         name = name.split("<")[0];
-        return this.imports.containsKey(name) ? this.imports.get(name) : null;
+        return this.imports.getOrDefault(name, null);
     }
 
     @Override

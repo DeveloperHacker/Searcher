@@ -37,10 +37,12 @@ public abstract class AbstractVisitor extends VoidVisitorAdapter<Object> {
     public void visit(MethodDeclaration declaration, Object arg) {
         final JavadocComment doc = declaration.getJavaDoc();
         final Pair<String, List<String>> pair = this.getFullClassName(declaration);
-        final AsmClass owner = new AsmClass(new ArrayList<>(Arrays.asList(pair.getValue0().split("."))), pair.getValue1());
+        final AsmClass owner = new AsmClass(Arrays.asList(pair.getValue0().split(".")), pair.getValue1());
         final String name = declaration.getName();
         final List<Pair<AsmType, String>> parameters = declaration.getParameters().stream()
-                .map(parameter -> new Pair<>(Parser.parseType(this.getTypeString(parameter.getType().toString())), parameter.getName()))
+                .map(parameter -> new Pair<>(
+                        Parser.parseType(this.getTypeString(parameter.getType().toString())),
+                        parameter.getName()))
                 .collect(Collectors.toList());
         final AsmType type = Parser.parseType(this.getTypeString(declaration.getType().toString()));
         final String body = declaration.getBody() == null ? "" : declaration.getBody().toString();
@@ -79,7 +81,7 @@ public abstract class AbstractVisitor extends VoidVisitorAdapter<Object> {
         return Sets.getElement(this.methods, description);
     }
 
-    public Set<AstMethod> getMethods() {
+    Set<AstMethod> getMethods() {
         return this.methods;
     }
 

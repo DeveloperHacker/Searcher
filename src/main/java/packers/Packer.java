@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("ALL")
 public final class Packer {
-    private static final String JAVA_DOC_TAG_NAME = "java-doc";
+    private static final String JAVA_DOC_TAG_NAME = "java-comment";
     private static final String HEAD_TAG_NAME = "@head";
     private static final String PARAM_TAG_NAME = "@param";
     private static final String RETURN_TAG_NAME = "@return";
